@@ -16,3 +16,4 @@ openpyxl>=3.1.0
 # Utilidades
 requests>=2.28.0
 httpx
+python-dotenv>=1.0.0
