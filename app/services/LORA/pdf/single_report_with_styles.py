@@ -186,7 +186,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
         self.pdf.set_font("Courier", "", 10)
         self.pdf.set_fill_color(*self.colors['summary_bg'])
         self.pdf.set_text_color(*self.colors['text_dark'])
-        col_width = 92  # ancho seguro para cada columna
+        col_width = 88  # ancho por columna: x=15+88=103 izq, x=110+88=198 der (< margen 200mm)
         line_height = 6
 
         idx = 0
