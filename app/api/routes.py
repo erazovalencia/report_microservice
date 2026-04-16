@@ -191,12 +191,12 @@ def export_single_report_pdf_simple(id: int):
         raise HTTPException(status_code=500, detail=f"Error exportando PDF simple: {str(e)}")
 
 @router.get("/lora/pdf_styled/{id}")
-async def export_single_report_pdf_styled(id: int):
+def export_single_report_pdf_styled(id: int):
     try:
         data = get_report_by_id(id)
         data = _normalize_report_for_single_pdf(data)
         service = ExportSinglePDFReportWithStyle()
-        file_buffer = await service.generate_file(data)
+        file_buffer = service.generate_file(data)
         filename = f"lora_report_{id}.pdf"
         return StreamingResponse(
             io.BytesIO(file_buffer.read()),

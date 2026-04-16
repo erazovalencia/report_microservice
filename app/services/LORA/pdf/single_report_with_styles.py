@@ -54,7 +54,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
             'action_close': (198, 223, 144),
         }
 
-    async def generate_file(self, data: Any, options: Dict = None) -> io.BytesIO:
+    def generate_file(self, data: Any, options: Dict = None) -> io.BytesIO:
         if not isinstance(data, dict):
             raise ValueError("Se requiere un diccionario con los datos del reporte")
 
