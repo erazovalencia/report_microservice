@@ -1,8 +1,9 @@
 import io
-from fastapi import APIRouter, HTTPException, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from fastapi.responses import StreamingResponse
 from datetime import datetime
 from ..models.ExportModel import FileFormat
+from ..security import require_api_key
 
 from ..services.LORA.pdf.all_reports import ExportAllReports
 from ..services.LORA.pdf.all_reports_by_userId import ExportAllReportsByUserId
@@ -48,7 +49,7 @@ async def get_supported_formats():
         ]
     }
 
-@router.get("/lora/pdf_all_reports", summary="Exporta todos los reportes en un PDF")
+@router.get("/lora/pdf_all_reports", summary="Exporta todos los reportes en un PDF", dependencies=[Depends(require_api_key)])
 async def export_pdf_all_reports():
     try:
         service = ExportAllReports()
@@ -61,7 +62,7 @@ async def export_pdf_all_reports():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al exportar reportes en PDF: {str(e)}")
 
-@router.get("/lora/pdf_all_reports_by_user/{userId}", summary="Exporta reportes por usuario en un PDF")
+@router.get("/lora/pdf_all_reports_by_user/{userId}", summary="Exporta reportes por usuario en un PDF", dependencies=[Depends(require_api_key)])
 async def export_pdf_all_reports_by_user(userId: int):
     try:
         service = ExportAllReportsByUserId(userId)
@@ -74,7 +75,7 @@ async def export_pdf_all_reports_by_user(userId: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al exportar reportes por usuario en PDF: {str(e)}")
 
-@router.get("/lora/xlsx_all_reports", summary="Exporta todos los reportes en XLSX (listado)")
+@router.get("/lora/xlsx_all_reports", summary="Exporta todos los reportes en XLSX (listado)", dependencies=[Depends(require_api_key)])
 def export_xlsx_all_reports():
     data = get_reports()
     print(data)
@@ -87,7 +88,7 @@ def export_xlsx_all_reports():
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
-@router.get("/lora/xlsx_all_reports_by_user/{userId}", summary="Exporta reportes por usuario en XLSX (listado)")
+@router.get("/lora/xlsx_all_reports_by_user/{userId}", summary="Exporta reportes por usuario en XLSX (listado)", dependencies=[Depends(require_api_key)])
 def export_xlsx_all_reports_by_user(userId: int):
     resp = get_report_by_userId(userId)
     print(resp)
@@ -101,7 +102,7 @@ def export_xlsx_all_reports_by_user(userId: int):
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
-@router.get("/lora/xlsx_all_reports_filter", summary="Exporta reportes filtrados en XLSX (listado)")
+@router.get("/lora/xlsx_all_reports_filter", summary="Exporta reportes filtrados en XLSX (listado)", dependencies=[Depends(require_api_key)])
 def export_xlsx_all_reports_filter(request: Request):
     try:
         # Capturar todos los filtros recibidos (soporta claves repetidas)
@@ -124,7 +125,7 @@ def export_xlsx_all_reports_filter(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al exportar reportes filtrados en XLSX: {str(e)}")
 
-@router.get("/lora/docx/{id}")
+@router.get("/lora/docx/{id}", dependencies=[Depends(require_api_key)])
 def export_single_report_docx(id: int):
     try:
         data = get_report_by_id(id)
@@ -139,7 +140,7 @@ def export_single_report_docx(id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error exportando DOCX: {str(e)}")
 
-@router.get("/lora/xlsx/{id}")
+@router.get("/lora/xlsx/{id}", dependencies=[Depends(require_api_key)])
 def export_single_report_xlsx(id: int):
     try:
         data = get_report_by_id(id)
@@ -174,7 +175,7 @@ def _normalize_report_for_single_pdf(data: dict) -> dict:
             act['responsible'] = full or assigned.get('documentId') or ''
     return data
 
-@router.get("/lora/pdf_simple/{id}")
+@router.get("/lora/pdf_simple/{id}", dependencies=[Depends(require_api_key)])
 def export_single_report_pdf_simple(id: int):
     try:
         data = get_report_by_id(id)
@@ -190,7 +191,7 @@ def export_single_report_pdf_simple(id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error exportando PDF simple: {str(e)}")
 
-@router.get("/lora/pdf_styled/{id}")
+@router.get("/lora/pdf_styled/{id}", dependencies=[Depends(require_api_key)])
 def export_single_report_pdf_styled(id: int):
     try:
         data = get_report_by_id(id)

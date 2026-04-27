@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,12 +12,11 @@ from .api.routes import router as export_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manejo del ciclo de vida de la aplicación"""
-    # Startup
-    print(" Iniciando microservicio de creacion de reportes...")
+    if not os.environ.get("EXPORT_SERVICE_API_KEY"):
+        raise RuntimeError("EXPORT_SERVICE_API_KEY no configurada — el servicio no puede arrancar")
+    print("Iniciando microservicio de creacion de reportes...")
     yield
-    # Shutdown
-    print(" Cerrando microservicio de creacion de reportes...")
+    print("Cerrando microservicio de creacion de reportes...")
 
 
 # Crear aplicación FastAPI
