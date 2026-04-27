@@ -85,8 +85,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
         self._draw_footer(report_data)
 
         buffer = io.BytesIO()
-        pdf_output = self.pdf.output(dest='S')
-        buffer.write(pdf_output if isinstance(pdf_output, (bytes, bytearray)) else pdf_output.encode('latin-1'))
+        buffer.write(self.pdf.output())
         buffer.seek(0)
         return buffer
 

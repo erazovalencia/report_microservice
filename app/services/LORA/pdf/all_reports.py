@@ -65,11 +65,7 @@ class ExportAllReports(BaseExportService):
             self._add_page_for_report(report)
 
         buffer = io.BytesIO()
-        pdf_output = self.pdf.output(dest='S')
-        if isinstance(pdf_output, (bytes, bytearray)):
-            buffer.write(pdf_output)
-        else:
-            buffer.write(pdf_output.encode('latin-1'))
+        buffer.write(self.pdf.output())
         buffer.seek(0)
         return buffer
 
