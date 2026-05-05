@@ -9,6 +9,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 
 from .api.routes import router as export_router
+from .api.hv_routes import router as hv_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +39,7 @@ app.add_middleware(
 
 # Incluir rutas
 app.include_router(export_router, prefix="/api/v1", tags=["export"])
+app.include_router(hv_router, prefix="/hv", tags=["hv"])
 
 
 @app.get("/")
