@@ -1,6 +1,6 @@
 import io
 import openpyxl
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Columnas esperadas en la plantilla (índice 0-based)
 COL_IDENTIFICACION = 0
@@ -27,7 +27,7 @@ def _bool_field(val) -> bool:
     return s in ("si", "sí", "yes", "1", "true", "s")
 
 
-def _float_field(val) -> float | None:
+def _float_field(val) -> Optional[float]:
     if val is None or _str(val) == "":
         return None
     try:
