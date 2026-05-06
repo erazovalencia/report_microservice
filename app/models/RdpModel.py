@@ -38,11 +38,17 @@ class RdpCatalogEntry(BaseModel):
     name: str
 
 
+class RdpEmployeeEntry(BaseModel):
+    cedula: str
+    nombre: str
+
+
 class RdpImportTemplateRequest(BaseModel):
     shifts: List[RdpCatalogEntry] = []
     absences: List[RdpCatalogEntry] = []
     bonuses: List[RdpCatalogEntry] = []
     projects: List[RdpCatalogEntry] = []
+    employees: List[RdpEmployeeEntry] = []
 
 
 class RdpParsedImportRow(BaseModel):
