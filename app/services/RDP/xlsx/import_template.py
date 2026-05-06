@@ -1,6 +1,7 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 import io
 from typing import List
 
@@ -166,6 +167,77 @@ class RdpImportTemplateService(BaseExportService):
                     cell.fill = PatternFill(start_color=bg, fill_type="solid")
 
             ws.row_dimensions[r].height = 16
+
+        # Data validation — dropdowns por columna
+        self._add_validations(ws, start_data_row, start_data_row + num_rows - 1)
+
+    def _add_validations(self, ws, first_row: int, last_row: int):
+        rng = f"{first_row}:{last_row}"
+
+        # B — Es Ausencia
+        dv_bool = DataValidation(
+            type="list",
+            formula1='"No,Si"',
+            showDropDown=False,
+            allow_blank=False,
+            showErrorMessage=True,
+            errorTitle="Valor inválido",
+            error='Ingrese "Si" o "No"',
+        )
+        dv_bool.sqref = f"B{first_row}:B{last_row}"
+        ws.add_data_validation(dv_bool)
+
+        # C — Turno (referencia a hoja Turnos col A, desde fila 2)
+        dv_turno = DataValidation(
+            type="list",
+            formula1="Turnos!$A$2:$A$200",
+            showDropDown=False,
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Código inválido",
+            error="Seleccione un turno de la hoja 'Turnos'",
+        )
+        dv_turno.sqref = f"C{first_row}:C{last_row}"
+        ws.add_data_validation(dv_turno)
+
+        # D — Tipo Ausencia
+        dv_ausencia = DataValidation(
+            type="list",
+            formula1="Ausencias!$A$2:$A$200",
+            showDropDown=False,
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Código inválido",
+            error="Seleccione un código de la hoja 'Ausencias'",
+        )
+        dv_ausencia.sqref = f"D{first_row}:D{last_row}"
+        ws.add_data_validation(dv_ausencia)
+
+        # E — Tipo de Bono
+        dv_bono = DataValidation(
+            type="list",
+            formula1="Bonos!$A$2:$A$200",
+            showDropDown=False,
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Código inválido",
+            error="Seleccione un bono de la hoja 'Bonos'",
+        )
+        dv_bono.sqref = f"E{first_row}:E{last_row}"
+        ws.add_data_validation(dv_bono)
+
+        # F — Proyecto
+        dv_proyecto = DataValidation(
+            type="list",
+            formula1="Proyectos!$A$2:$A$200",
+            showDropDown=False,
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Código inválido",
+            error="Seleccione un proyecto de la hoja 'Proyectos'",
+        )
+        dv_proyecto.sqref = f"F{first_row}:F{last_row}"
+        ws.add_data_validation(dv_proyecto)
 
     def _build_catalog_sheet(
         self,
