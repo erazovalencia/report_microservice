@@ -248,6 +248,11 @@ class RdpImportTemplateService(BaseExportService):
     ):
         ws = wb.create_sheet(title)
 
+        # Proteger la hoja para que el reportador no la modifique accidentalmente
+        ws.protection.sheet = True
+        ws.protection.selectLockedCells = False    # puede seleccionar para ver
+        ws.protection.selectUnlockedCells = False
+
         for col, header in enumerate(col_headers, start=1):
             cell = ws.cell(row=1, column=col, value=header)
             cell.font = Font(bold=True, color=HEADER_FG)
