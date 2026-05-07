@@ -3,7 +3,9 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 import io
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+BOGOTA_TZ = timezone(timedelta(hours=-5))
 
 from ...base import BaseExportService
 from ....models.RdpModel import RdpExportRow
@@ -67,7 +69,7 @@ def _fmt_biostar(iso: str) -> str:
         return ""
     try:
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        return dt.strftime("%H:%M")
+        return dt.astimezone(BOGOTA_TZ).strftime("%H:%M")
     except Exception:
         return iso
 
