@@ -12,8 +12,10 @@ COL_PROYECTO       = 5
 COL_HORA_EXTRA     = 6
 COL_NOTAS          = 7
 
-# Filas de encabezado a saltar (título + instrucción + header + hint + ejemplo)
-SKIP_ROWS = 5
+# Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
+# Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
+SKIP_ROWS_DEFAULT    = 5   # sin empleados: fila ejemplo en row 5, datos desde row 6
+SKIP_ROWS_WITH_EMPS  = 4   # con empleados: datos desde row 5
 
 
 def _str(val) -> str:
@@ -36,19 +38,32 @@ def _float_field(val) -> Optional[float]:
         return None
 
 
+def _detect_skip_rows(ws) -> int:
+    """
+    Detecta cuántas filas de encabezado saltar.
+    Si la fila 5 col A tiene un valor numérico (cédula pre-rellena), los datos empiezan en row 5.
+    Si la fila 5 es la fila ejemplo (valor de ejemplo), los datos empiezan en row 6.
+    """
+    cell_a5 = ws.cell(row=5, column=1).value
+    if cell_a5 is not None and _str(cell_a5) not in ("", "1069742877"):
+        return SKIP_ROWS_WITH_EMPS   # datos desde row 5
+    return SKIP_ROWS_DEFAULT         # datos desde row 6
+
+
 def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
     wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), data_only=True)
 
     # Use first sheet regardless of name
     ws = wb.worksheets[0]
+    skip = _detect_skip_rows(ws)
     rows_out = []
 
-    for raw_row_idx, row in enumerate(ws.iter_rows(min_row=SKIP_ROWS + 1, values_only=True)):
+    for raw_row_idx, row in enumerate(ws.iter_rows(min_row=skip + 1, values_only=True)):
         # Skip fully empty rows
         if all(v is None or _str(v) == "" for v in row):
             continue
 
-        row_number = raw_row_idx + SKIP_ROWS + 1
+        row_number = raw_row_idx + skip + 1
         errors: List[str] = []
 
         identificacion = _str(row[COL_IDENTIFICACION] if len(row) > COL_IDENTIFICACION else None)
