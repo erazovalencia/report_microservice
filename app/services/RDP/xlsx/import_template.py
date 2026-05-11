@@ -21,7 +21,7 @@ COLUMNS = [
     ("Identificación",   "Cédula del empleado",                         "1069742877",  True,  16),
     ("Es Ausencia",      "Si = ausencia  /  No = turno normal",         "No",          True,  14),
     ("Turno",            "Código de turno (ver hoja Turnos)",            "ADMI",        False, 14),
-    ("Tipo Ausencia",    "Código de ausencia (ver hoja Ausencias)",     "300",         False, 16),
+    ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",     "Licencia No Remunerada", False, 22),
     ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",              "BONO_CAMPO",  False, 16),
     ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",    "",            False, 18),
     ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",         "06:00",       False, 14),
@@ -46,7 +46,7 @@ class RdpImportTemplateService(BaseExportService):
         wb = Workbook()
         self._build_main_sheet(wb, employees)
         self._build_catalog_sheet(wb, "Turnos",    shifts,      ["Código", "Nombre"],  display="code")
-        self._build_catalog_sheet(wb, "Ausencias", absences,    ["Código", "Nombre"],  display="code_name")
+        self._build_catalog_sheet(wb, "Ausencias", absences,    ["Nombre", "Código"],  display="name")
         self._build_catalog_sheet(wb, "Bonos",     bonuses,     ["Código", "Nombre"],  display="code")
         self._build_catalog_sheet(wb, "Costos",    workCenters, ["Código", "Nombre"],  display="name")
 

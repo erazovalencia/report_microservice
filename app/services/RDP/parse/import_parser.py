@@ -78,8 +78,30 @@ def _detect_skip_rows(ws) -> int:
     return SKIP_ROWS_DEFAULT         # datos desde row 6
 
 
+def _build_absence_name_map(wb) -> Dict[str, str]:
+    """
+    Lee la hoja 'Ausencias' (index 2) para construir un mapa nombre→código.
+    Funciona con la plantilla nueva (display=name: col A=nombre, col B=código)
+    y con plantillas legacy (col A=código, col B=nombre) — en ese caso el mapa queda vacío
+    porque los valores en col A ya son códigos y no necesitan traducción.
+    """
+    try:
+        ws = wb.worksheets[2]  # Reporte(0), Turnos(1), Ausencias(2)
+    except IndexError:
+        return {}
+    result: Dict[str, str] = {}
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        name = _str(row[0]) if row and len(row) > 0 else ""
+        code = _str(row[1]) if row and len(row) > 1 else ""
+        if name and code and not name.isdigit():
+            result[name] = code
+    return result
+
+
 def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
     wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), data_only=True)
+
+    absence_name_to_code = _build_absence_name_map(wb)
 
     # Use first sheet regardless of name
     ws = wb.worksheets[0]
@@ -97,7 +119,11 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         identificacion = _str(row[COL_IDENTIFICACION] if len(row) > COL_IDENTIFICACION else None)
         es_ausencia    = _bool_field(row[COL_ES_AUSENCIA]    if len(row) > COL_ES_AUSENCIA    else None)
         turno          = _extract_code(row[COL_TURNO]         if len(row) > COL_TURNO         else None) or None
-        tipo_ausencia  = _extract_code(row[COL_TIPO_AUSENCIA] if len(row) > COL_TIPO_AUSENCIA else None) or None
+        tipo_ausencia_raw = _str(row[COL_TIPO_AUSENCIA] if len(row) > COL_TIPO_AUSENCIA else None)
+        if tipo_ausencia_raw:
+            tipo_ausencia = absence_name_to_code.get(tipo_ausencia_raw) or _extract_code(tipo_ausencia_raw) or None
+        else:
+            tipo_ausencia = None
         tipo_bono      = _extract_code(row[COL_TIPO_BONO]     if len(row) > COL_TIPO_BONO     else None) or None
         proyecto       = _str(row[COL_PROYECTO]               if len(row) > COL_PROYECTO       else None) or None
         hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
