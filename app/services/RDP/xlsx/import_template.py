@@ -45,10 +45,10 @@ class RdpImportTemplateService(BaseExportService):
 
         wb = Workbook()
         self._build_main_sheet(wb, employees)
-        self._build_catalog_sheet(wb, "Turnos",    shifts,      ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Ausencias", absences,    ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Bonos",     bonuses,     ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Costos",    workCenters, ["Código", "Nombre"])
+        self._build_catalog_sheet(wb, "Turnos",    shifts,      ["Código", "Nombre"],  display="code")
+        self._build_catalog_sheet(wb, "Ausencias", absences,    ["Código", "Nombre"],  display="code_name")
+        self._build_catalog_sheet(wb, "Bonos",     bonuses,     ["Código", "Nombre"],  display="code")
+        self._build_catalog_sheet(wb, "Costos",    workCenters, ["Código", "Nombre"],  display="name")
 
         buf = io.BytesIO()
         wb.save(buf)
@@ -268,6 +268,7 @@ class RdpImportTemplateService(BaseExportService):
         title: str,
         entries: list,
         col_headers: list,
+        display: str = "code",  # "code" | "code_name" | "name"
     ):
         ws = wb.create_sheet(title)
 
@@ -289,27 +290,41 @@ class RdpImportTemplateService(BaseExportService):
             ws.column_dimensions["B"].width = 40
             return
 
-        max_name = 10
+        max_a = 10
+        max_b = 10
         for i, entry in enumerate(entries, start=2):
             code = entry.get("code", "") if isinstance(entry, dict) else getattr(entry, "code", "")
             name = entry.get("name", "") if isinstance(entry, dict) else getattr(entry, "name", "")
-            bg = "F5F5F5" if i % 2 == 0 else "FFFFFF"
+            bg   = "F5F5F5" if i % 2 == 0 else "FFFFFF"
             fill = PatternFill(start_color=bg, fill_type="solid")
 
-            c1 = ws.cell(row=i, column=1, value=code)
-            c1.fill = fill
-            c1.border = BORDER
-            c1.font = Font(bold=True, size=9)
+            if display == "code_name":
+                # Col A = "código — nombre"  (el que va al dropdown)
+                # Col B = código limpio       (referencia visual)
+                display_val = f"{code} — {name}" if name else code
+                c1 = ws.cell(row=i, column=1, value=display_val)
+                c2 = ws.cell(row=i, column=2, value=code)
+                max_a = max(max_a, len(display_val))
+                max_b = max(max_b, len(code))
+            elif display == "name":
+                # Col A = nombre (al dropdown)
+                # Col B = código (referencia)
+                c1 = ws.cell(row=i, column=1, value=name)
+                c2 = ws.cell(row=i, column=2, value=code)
+                max_a = max(max_a, len(name))
+                max_b = max(max_b, len(code))
+            else:
+                # default: col A = código, col B = nombre
+                c1 = ws.cell(row=i, column=1, value=code)
+                c2 = ws.cell(row=i, column=2, value=name)
+                max_a = max(max_a, len(code))
+                max_b = max(max_b, len(name))
 
-            c2 = ws.cell(row=i, column=2, value=name)
-            c2.fill = fill
-            c2.border = BORDER
-            c2.font = Font(size=9)
+            c1.fill = fill; c1.border = BORDER; c1.font = Font(bold=(display == "code"), size=9)
+            c2.fill = fill; c2.border = BORDER; c2.font = Font(size=9, color="888888")
 
-            max_name = max(max_name, len(name))
-
-        ws.column_dimensions["A"].width = 18
-        ws.column_dimensions["B"].width = min(max_name + 4, 50)
+        ws.column_dimensions["A"].width = min(max_a + 4, 55)
+        ws.column_dimensions["B"].width = min(max_b + 4, 20)
 
     def get_content_type(self) -> str:
         return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

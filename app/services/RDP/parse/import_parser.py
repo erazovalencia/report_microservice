@@ -25,6 +25,14 @@ def _str(val) -> str:
     return str(val).strip()
 
 
+def _extract_code(val) -> str:
+    """Extrae el código de un valor que puede ser 'código', 'código — nombre', o 'nombre'."""
+    s = _str(val)
+    if " — " in s:
+        return s.split(" — ")[0].strip()
+    return s
+
+
 def _bool_field(val) -> bool:
     s = _str(val).lower()
     return s in ("si", "sí", "yes", "1", "true", "s")
@@ -88,10 +96,10 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
 
         identificacion = _str(row[COL_IDENTIFICACION] if len(row) > COL_IDENTIFICACION else None)
         es_ausencia    = _bool_field(row[COL_ES_AUSENCIA]    if len(row) > COL_ES_AUSENCIA    else None)
-        turno          = _str(row[COL_TURNO]          if len(row) > COL_TURNO          else None) or None
-        tipo_ausencia  = _str(row[COL_TIPO_AUSENCIA]  if len(row) > COL_TIPO_AUSENCIA  else None) or None
-        tipo_bono      = _str(row[COL_TIPO_BONO]      if len(row) > COL_TIPO_BONO      else None) or None
-        proyecto       = _str(row[COL_PROYECTO]        if len(row) > COL_PROYECTO        else None) or None
+        turno          = _extract_code(row[COL_TURNO]         if len(row) > COL_TURNO         else None) or None
+        tipo_ausencia  = _extract_code(row[COL_TIPO_AUSENCIA] if len(row) > COL_TIPO_AUSENCIA else None) or None
+        tipo_bono      = _extract_code(row[COL_TIPO_BONO]     if len(row) > COL_TIPO_BONO     else None) or None
+        proyecto       = _str(row[COL_PROYECTO]               if len(row) > COL_PROYECTO       else None) or None
         hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
         hora_salida    = _time_field(row[COL_HORA_SALIDA]  if len(row) > COL_HORA_SALIDA  else None)
         notas          = _str(row[COL_NOTAS]           if len(row) > COL_NOTAS           else None) or None
