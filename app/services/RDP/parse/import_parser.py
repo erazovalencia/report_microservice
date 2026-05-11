@@ -9,8 +9,9 @@ COL_TURNO          = 2
 COL_TIPO_AUSENCIA  = 3
 COL_TIPO_BONO      = 4
 COL_PROYECTO       = 5
-COL_HORA_EXTRA     = 6
-COL_NOTAS          = 7
+COL_HORA_INGRESO   = 6
+COL_HORA_SALIDA    = 7
+COL_NOTAS          = 8
 
 # Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
 # Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
@@ -34,6 +35,25 @@ def _float_field(val) -> Optional[float]:
         return None
     try:
         return float(val)
+    except (ValueError, TypeError):
+        return None
+
+
+def _time_field(val) -> Optional[float]:
+    """Acepta HH:MM (ej. '06:00') o decimal (ej. 6.5). Devuelve float de hora."""
+    s = _str(val)
+    if not s:
+        return None
+    if ":" in s:
+        parts = s.split(":")
+        try:
+            h = int(parts[0])
+            m = int(parts[1]) if len(parts) > 1 else 0
+            return h + m / 60.0
+        except (ValueError, IndexError):
+            return None
+    try:
+        return float(s)
     except (ValueError, TypeError):
         return None
 
@@ -72,7 +92,8 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         tipo_ausencia  = _str(row[COL_TIPO_AUSENCIA]  if len(row) > COL_TIPO_AUSENCIA  else None) or None
         tipo_bono      = _str(row[COL_TIPO_BONO]      if len(row) > COL_TIPO_BONO      else None) or None
         proyecto       = _str(row[COL_PROYECTO]        if len(row) > COL_PROYECTO        else None) or None
-        hora_extra     = _float_field(row[COL_HORA_EXTRA] if len(row) > COL_HORA_EXTRA else None)
+        hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
+        hora_salida    = _time_field(row[COL_HORA_SALIDA]  if len(row) > COL_HORA_SALIDA  else None)
         notas          = _str(row[COL_NOTAS]           if len(row) > COL_NOTAS           else None) or None
 
         if not identificacion:
@@ -91,16 +112,17 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
             errors.append("Opciones excluyentes: tienes Es Ausencia = Sí Y un código de turno. Deja solo uno según el tipo de registro.")
 
         rows_out.append({
-            "rowIndex":     row_number,
+            "rowIndex":       row_number,
             "identificacion": identificacion,
-            "esAusencia":   es_ausencia,
-            "turno":        turno,
-            "tipoAusencia": tipo_ausencia,
-            "tipoBono":     tipo_bono,
-            "proyecto":     proyecto,
-            "horaExtra":    hora_extra,
-            "notas":        notas,
-            "parseErrors":  errors,
+            "esAusencia":     es_ausencia,
+            "turno":          turno,
+            "tipoAusencia":   tipo_ausencia,
+            "tipoBono":       tipo_bono,
+            "proyecto":       proyecto,
+            "horaIngreso":    hora_ingreso,
+            "horaSalida":     hora_salida,
+            "notas":          notas,
+            "parseErrors":    errors,
         })
 
     return rows_out

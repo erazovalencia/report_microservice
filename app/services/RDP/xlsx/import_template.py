@@ -18,14 +18,15 @@ REQUIRED_BG = "FFF3CD"
 OPTIONAL_BG = "F0F0F0"
 
 COLUMNS = [
-    ("Identificación",   "Cédula del empleado",                     "1069742877",  True,  16),
-    ("Es Ausencia",      "Si = ausencia  /  No = turno normal",     "No",          True,  14),
-    ("Turno",            "Código de turno (ver hoja Turnos)",        "TUR1",        False, 14),
-    ("Tipo Ausencia",    "Código de ausencia (ver hoja Ausencias)", "300",         False, 16),
-    ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",          "BONO_CAMPO",  False, 16),
-    ("Proyecto",         "Código de proyecto (ver hoja Proyectos)", "",            False, 16),
-    ("Hora Extra Total", "Horas extras totales (número decimal)",   "2.5",         False, 18),
-    ("Notas",            "Observaciones del registro",              "",            False, 28),
+    ("Identificación",  "Cédula del empleado",                      "1069742877",  True,  16),
+    ("Es Ausencia",     "Si = ausencia  /  No = turno normal",      "No",          True,  14),
+    ("Turno",           "Código de turno (ver hoja Turnos)",         "ADMI",        False, 14),
+    ("Tipo Ausencia",   "Código de ausencia (ver hoja Ausencias)",  "300",         False, 16),
+    ("Tipo de Bono",    "Código de bono (ver hoja Bonos)",           "BONO_CAMPO",  False, 16),
+    ("Proyecto",        "Código de proyecto (ver hoja Proyectos)",  "",            False, 16),
+    ("Hora Ingreso",    "Hora entrada real HH:MM (ej. 06:00)",      "06:00",       False, 14),
+    ("Hora Salida",     "Hora salida real HH:MM  (ej. 18:00)",      "18:00",       False, 14),
+    ("Notas",           "Observaciones del registro",               "",            False, 28),
 ]
 
 
@@ -79,7 +80,7 @@ class RdpImportTemplateService(BaseExportService):
             "Instrucciones: complete una fila por empleado. "
             "Columnas con * son obligatorias. "
             "Use los códigos de las hojas de catálogo. "
-            "No modifique las columnas A ni I."
+            "No modifique las columnas A ni J."
         )
         s.font = Font(italic=True, size=9, color="555555")
         s.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
