@@ -50,11 +50,11 @@ class RdpEmployeeEntry(BaseModel):
 
 
 class RdpImportTemplateRequest(BaseModel):
-    shifts: List[RdpCatalogEntry] = []
-    absences: List[RdpCatalogEntry] = []
-    bonuses: List[RdpCatalogEntry] = []
-    projects: List[RdpCatalogEntry] = []
-    employees: List[RdpEmployeeEntry] = []
+    shifts:      List[RdpCatalogEntry] = []
+    absences:    List[RdpCatalogEntry] = []
+    bonuses:     List[RdpCatalogEntry] = []
+    workCenters: List[RdpCatalogEntry] = []
+    employees:   List[RdpEmployeeEntry] = []
 
 
 class RdpParsedImportRow(BaseModel):

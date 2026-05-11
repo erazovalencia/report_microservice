@@ -18,15 +18,15 @@ REQUIRED_BG = "FFF3CD"
 OPTIONAL_BG = "F0F0F0"
 
 COLUMNS = [
-    ("Identificación",  "Cédula del empleado",                      "1069742877",  True,  16),
-    ("Es Ausencia",     "Si = ausencia  /  No = turno normal",      "No",          True,  14),
-    ("Turno",           "Código de turno (ver hoja Turnos)",         "ADMI",        False, 14),
-    ("Tipo Ausencia",   "Código de ausencia (ver hoja Ausencias)",  "300",         False, 16),
-    ("Tipo de Bono",    "Código de bono (ver hoja Bonos)",           "BONO_CAMPO",  False, 16),
-    ("Proyecto",        "Código de proyecto (ver hoja Proyectos)",  "",            False, 16),
-    ("Hora Ingreso",    "Hora entrada real HH:MM (ej. 06:00)",      "06:00",       False, 14),
-    ("Hora Salida",     "Hora salida real HH:MM  (ej. 18:00)",      "18:00",       False, 14),
-    ("Notas",           "Observaciones del registro",               "",            False, 28),
+    ("Identificación",   "Cédula del empleado",                         "1069742877",  True,  16),
+    ("Es Ausencia",      "Si = ausencia  /  No = turno normal",         "No",          True,  14),
+    ("Turno",            "Código de turno (ver hoja Turnos)",            "ADMI",        False, 14),
+    ("Tipo Ausencia",    "Código de ausencia (ver hoja Ausencias)",     "300",         False, 16),
+    ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",              "BONO_CAMPO",  False, 16),
+    ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",    "",            False, 18),
+    ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",         "06:00",       False, 14),
+    ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",         "18:00",       False, 14),
+    ("Notas",            "Observaciones del registro",                  "",            False, 28),
 ]
 
 
@@ -37,18 +37,18 @@ class RdpImportTemplateService(BaseExportService):
         data,
         options=None,
     ) -> io.BytesIO:
-        shifts    = data.get("shifts",    [])
-        absences  = data.get("absences",  [])
-        bonuses   = data.get("bonuses",   [])
-        projects  = data.get("projects",  [])
-        employees = data.get("employees", [])
+        shifts      = data.get("shifts",      [])
+        absences    = data.get("absences",    [])
+        bonuses     = data.get("bonuses",     [])
+        workCenters = data.get("workCenters", [])
+        employees   = data.get("employees",   [])
 
         wb = Workbook()
         self._build_main_sheet(wb, employees)
-        self._build_catalog_sheet(wb, "Turnos",    shifts,   ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Ausencias", absences, ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Bonos",     bonuses,  ["Código", "Nombre"])
-        self._build_catalog_sheet(wb, "Proyectos", projects, ["Código", "Nombre"])
+        self._build_catalog_sheet(wb, "Turnos",    shifts,      ["Código", "Nombre"])
+        self._build_catalog_sheet(wb, "Ausencias", absences,    ["Código", "Nombre"])
+        self._build_catalog_sheet(wb, "Bonos",     bonuses,     ["Código", "Nombre"])
+        self._build_catalog_sheet(wb, "Costos",    workCenters, ["Código", "Nombre"])
 
         buf = io.BytesIO()
         wb.save(buf)
@@ -173,8 +173,6 @@ class RdpImportTemplateService(BaseExportService):
         self._add_validations(ws, start_data_row, start_data_row + num_rows - 1)
 
     def _add_validations(self, ws, first_row: int, last_row: int):
-        rng = f"{first_row}:{last_row}"
-
         # B — Es Ausencia
         dv_bool = DataValidation(
             type="list",
@@ -188,7 +186,7 @@ class RdpImportTemplateService(BaseExportService):
         dv_bool.sqref = f"B{first_row}:B{last_row}"
         ws.add_data_validation(dv_bool)
 
-        # C — Turno (referencia a hoja Turnos col A, desde fila 2)
+        # C — Turno: dropdown + validación exclusión (solo si Es Ausencia = No)
         dv_turno = DataValidation(
             type="list",
             formula1="Turnos!$A$2:$A$200",
@@ -201,7 +199,19 @@ class RdpImportTemplateService(BaseExportService):
         dv_turno.sqref = f"C{first_row}:C{last_row}"
         ws.add_data_validation(dv_turno)
 
-        # D — Tipo Ausencia
+        # C extra — bloquear turno si Es Ausencia = Si
+        dv_turno_xor = DataValidation(
+            type="custom",
+            formula1=f'=OR($B{first_row}="No",$C{first_row}="")',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Opciones excluyentes",
+            error='Si "Es Ausencia" = Si, la columna Turno debe estar vacía.',
+        )
+        dv_turno_xor.sqref = f"C{first_row}:C{last_row}"
+        ws.add_data_validation(dv_turno_xor)
+
+        # D — Tipo Ausencia: dropdown + validación exclusión (solo si Es Ausencia = Si)
         dv_ausencia = DataValidation(
             type="list",
             formula1="Ausencias!$A$2:$A$200",
@@ -213,6 +223,18 @@ class RdpImportTemplateService(BaseExportService):
         )
         dv_ausencia.sqref = f"D{first_row}:D{last_row}"
         ws.add_data_validation(dv_ausencia)
+
+        # D extra — bloquear ausencia si Es Ausencia = No
+        dv_ausencia_xor = DataValidation(
+            type="custom",
+            formula1=f'=OR($B{first_row}="Si",$D{first_row}="")',
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Opciones excluyentes",
+            error='Si "Es Ausencia" = No, la columna Tipo Ausencia debe estar vacía.',
+        )
+        dv_ausencia_xor.sqref = f"D{first_row}:D{last_row}"
+        ws.add_data_validation(dv_ausencia_xor)
 
         # E — Tipo de Bono
         dv_bono = DataValidation(
@@ -227,18 +249,18 @@ class RdpImportTemplateService(BaseExportService):
         dv_bono.sqref = f"E{first_row}:E{last_row}"
         ws.add_data_validation(dv_bono)
 
-        # F — Proyecto
-        dv_proyecto = DataValidation(
+        # F — Centro de Costo
+        dv_costo = DataValidation(
             type="list",
-            formula1="Proyectos!$A$2:$A$200",
+            formula1="Costos!$A$2:$A$200",
             showDropDown=False,
             allow_blank=True,
             showErrorMessage=True,
             errorTitle="Código inválido",
-            error="Seleccione un proyecto de la hoja 'Proyectos'",
+            error="Seleccione un centro de costo de la hoja 'Costos'",
         )
-        dv_proyecto.sqref = f"F{first_row}:F{last_row}"
-        ws.add_data_validation(dv_proyecto)
+        dv_costo.sqref = f"F{first_row}:F{last_row}"
+        ws.add_data_validation(dv_costo)
 
     def _build_catalog_sheet(
         self,

@@ -35,11 +35,11 @@ async def generate_import_template(payload: RdpImportTemplateRequest):
     try:
         service = RdpImportTemplateService()
         data = {
-            "shifts":    [e.dict() for e in payload.shifts],
-            "absences":  [e.dict() for e in payload.absences],
-            "bonuses":   [e.dict() for e in payload.bonuses],
-            "projects":  [e.dict() for e in payload.projects],
-            "employees": [e.dict() for e in payload.employees],
+            "shifts":      [e.dict() for e in payload.shifts],
+            "absences":    [e.dict() for e in payload.absences],
+            "bonuses":     [e.dict() for e in payload.bonuses],
+            "workCenters": [e.dict() for e in payload.workCenters],
+            "employees":   [e.dict() for e in payload.employees],
         }
         buffer = service.generate_file(data)
         return StreamingResponse(
