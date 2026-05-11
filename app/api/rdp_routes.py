@@ -2,9 +2,11 @@ import io
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 
-from ..models.RdpModel import RdpExportRequest, RdpImportTemplateRequest
+from ..models.RdpModel import RdpExportRequest, RdpImportTemplateRequest, RdpConsolidatedRequest
 from ..services.RDP.xlsx.report_export import RdpReportExportService
 from ..services.RDP.xlsx.import_template import RdpImportTemplateService
+from ..services.RDP.xlsx.consolidated_report import RdpConsolidatedService
+from ..services.RDP.xlsx.consolidated_report_pdf import generate_consolidated_pdf
 from ..services.RDP.parse.import_parser import parse_import_file
 
 router = APIRouter()
@@ -49,6 +51,37 @@ async def generate_import_template(payload: RdpImportTemplateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando plantilla: {str(e)}")
+
+
+@router.post("/report/consolidated")
+async def generate_consolidated_report(payload: RdpConsolidatedRequest):
+    try:
+        service = RdpConsolidatedService()
+        buffer  = service.generate_file(payload)
+        emp     = payload.empleado
+        fname   = f"consolidado_{emp.identificacion}_{payload.periodo.get('from','')}_{payload.periodo.get('to','')}.xlsx"
+        return StreamingResponse(
+            buffer,
+            media_type=XLSX_MIME,
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando consolidado: {str(e)}")
+
+
+@router.post("/report/consolidated/pdf")
+async def generate_consolidated_report_pdf(payload: RdpConsolidatedRequest):
+    try:
+        buffer = generate_consolidated_pdf(payload)
+        emp    = payload.empleado
+        fname  = f"consolidado_{emp.identificacion}_{payload.periodo.get('from','')}_{payload.periodo.get('to','')}.pdf"
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
 
 @router.post("/import/parse")

@@ -57,6 +57,39 @@ class RdpImportTemplateRequest(BaseModel):
     employees:   List[RdpEmployeeEntry] = []
 
 
+class RdpConsolidatedEmpleado(BaseModel):
+    identificacion:     str
+    nombre:             str
+    edad:               str = ""
+    cargo:              str = ""
+    unidadOrganizativa: str = ""
+    sexo:               str = ""
+    tipoNomina:         str = ""
+    empresa:            str = "ERAZO VALENCIA S.A."
+
+
+class RdpConsolidatedFila(BaseModel):
+    fecha:         str
+    turno:         str
+    descripcion:   str
+    horaIngreso:   str
+    horaSalida:    str
+    totalHoras:    float = 0.0
+    hed:           float = 0.0
+    hen:           float = 0.0
+    hedf:          float = 0.0
+    henf:          float = 0.0
+    centroCostos:  str = ""
+    actividad:     str = ""
+
+
+class RdpConsolidatedRequest(BaseModel):
+    periodo:               dict
+    empleado:              RdpConsolidatedEmpleado
+    filas:                 List[RdpConsolidatedFila]
+    totalHorasAdicionales: float = 0.0
+
+
 class RdpParsedImportRow(BaseModel):
     rowIndex: int
     identificacion: str
