@@ -49,7 +49,11 @@ HEADERS = [
     ("Tipo",                   14),
     ("Turno / Ausencia",       18),
     ("Tipo de Bono",           16),
-    ("Proyecto",               16),
+    ("Centro de Costo",        18),
+    ("Actividad",              22),
+    ("H. Entrada",             12),
+    ("H. Salida",              12),
+    ("Total Horas",            12),
     ("Rotación",               12),
     ("Entrada BioStar",        16),
     ("Salida BioStar",         16),
@@ -58,6 +62,8 @@ HEADERS = [
     ("HE Diurna Fest.",        13),
     ("HE Nocturna",            11),
     ("HE Nocturna Fest.",      14),
+    ("HRD",                    10),
+    ("RNF",                    10),
     ("Impacto Vac.",           13),
     ("Impacto Comp.",          13),
     ("Estado Reporte",         18),
@@ -134,7 +140,11 @@ class RdpReportExportService(BaseExportService):
                 TIPO_LABEL.get(row.tipo, row.tipo),
                 row.turnoAusencia,
                 row.tipoBono or "",
-                row.proyecto or "",
+                row.centroCosto or "",
+                row.actividad or "",
+                row.horarioEntrada or "",
+                row.horarioSalida or "",
+                row.totalHoras or "",
                 row.rotacion or "",
                 _fmt_biostar(row.biostarEntrada),
                 _fmt_biostar(row.biostarSalida),
@@ -143,6 +153,8 @@ class RdpReportExportService(BaseExportService):
                 row.heDiurnaFestiva if row.heDiurnaFestiva else "",
                 row.heNocturna if row.heNocturna else "",
                 row.heNocturnaFestiva if row.heNocturnaFestiva else "",
+                row.hrd if row.hrd else "",
+                row.rnf if row.rnf else "",
                 round(row.impactoVacaciones, 4) if row.impactoVacaciones else "",
                 round(row.impactoCompensatorios, 4) if row.impactoCompensatorios else "",
                 ESTADO_LABEL.get(row.estadoReporte, row.estadoReporte),
@@ -152,7 +164,8 @@ class RdpReportExportService(BaseExportService):
                 cell = ws.cell(row=r, column=col, value=val)
                 cell.fill = fill
                 cell.border = BORDER
-                cell.alignment = Alignment(vertical="center", horizontal="center" if col in (1, 3, 5, 6, 9, 10, 11) else "left")
+                # cols centradas: Fecha(1), Cédula(3), Tipo(5), Turno/Aus(6), H.Entrada(10), H.Salida(11), TotalHoras(12), Rotación(13), BioStar(14,15)
+                cell.alignment = Alignment(vertical="center", horizontal="center" if col in (1, 3, 5, 6, 10, 11, 12, 13, 14, 15) else "left")
                 cell.font = Font(size=9)
 
             ws.row_dimensions[r].height = 16

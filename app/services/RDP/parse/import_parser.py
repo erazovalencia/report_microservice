@@ -81,8 +81,14 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         if not es_ausencia and not turno:
             errors.append("Turno es obligatorio cuando Es Ausencia = No")
 
+        if not es_ausencia and tipo_ausencia:
+            errors.append("Opciones excluyentes: tienes Turno Y Tipo Ausencia diligenciados. Deja solo uno según el tipo de registro.")
+
         if es_ausencia and not tipo_ausencia:
             errors.append("Tipo Ausencia es obligatorio cuando Es Ausencia = Si")
+
+        if es_ausencia and turno:
+            errors.append("Opciones excluyentes: tienes Es Ausencia = Sí Y un código de turno. Deja solo uno según el tipo de registro.")
 
         rows_out.append({
             "rowIndex":     row_number,

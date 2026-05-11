@@ -9,19 +9,25 @@ class RdpExportRow(BaseModel):
     nombre: str
     tipo: str
     turnoAusencia: str
-    tipoBono: str
-    proyecto: str
-    heDiurna: float
-    heDiurnaFestiva: float
-    heNocturna: float
-    heNocturnaFestiva: float
-    heTotal: float
-    rotacion: str
-    impactoVacaciones: float
-    impactoCompensatorios: float
+    tipoBono: str = ""
+    centroCosto: str = ""
+    actividad: str = ""
+    horarioEntrada: str = ""
+    horarioSalida: str = ""
+    totalHoras: str = ""
+    heDiurna: float = 0.0
+    heDiurnaFestiva: float = 0.0
+    heNocturna: float = 0.0
+    heNocturnaFestiva: float = 0.0
+    heTotal: float = 0.0
+    hrd: float = 0.0
+    rnf: float = 0.0
+    rotacion: str = ""
+    impactoVacaciones: float = 0.0
+    impactoCompensatorios: float = 0.0
     estadoReporte: str
-    biostarEntrada: str
-    biostarSalida: str
+    biostarEntrada: str = ""
+    biostarSalida: str = ""
 
 
 class RdpExportRequest(BaseModel):
