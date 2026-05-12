@@ -1,6 +1,24 @@
 from fpdf import FPDF
 import io
+import unicodedata
 from ....models.RdpModel import RdpConsolidatedRequest
+
+
+def _t(text) -> str:
+    """Sanitiza texto para Helvetica (Latin-1/Windows-1252).
+    Mantiene todos los caracteres del español (á é í ó ú ñ ü Á É Í Ó Ú Ñ Ü).
+    Los que queden fuera del rango Latin-1 se descomponen al equivalente ASCII más cercano.
+    """
+    s = unicodedata.normalize("NFC", str(text) if text is not None else "")
+    result = []
+    for ch in s:
+        try:
+            ch.encode("latin-1")
+            result.append(ch)
+        except UnicodeEncodeError:
+            decomposed = unicodedata.normalize("NFKD", ch).encode("ascii", "ignore").decode("ascii")
+            result.append(decomposed if decomposed else "")
+    return "".join(result)
 
 # A4 landscape: 297 x 210 mm
 PAGE_W = 297
@@ -59,7 +77,7 @@ def _draw_cell(pdf: FPDF, w, h, text, bold=False, size=8,
         pdf.set_fill_color(*fill)
     pdf.set_text_color(*text_color)
     pdf.set_font("Helvetica", "B" if bold else "", size)
-    pdf.cell(w, h, str(text)[:60], border=border, ln=ln, align=align, fill=bool(fill))
+    pdf.cell(w, h, _t(str(text))[:60], border=border, ln=ln, align=align, fill=bool(fill))
 
 
 def generate_consolidated_pdf(data: RdpConsolidatedRequest) -> io.BytesIO:
@@ -94,10 +112,10 @@ def generate_consolidated_pdf(data: RdpConsolidatedRequest) -> io.BytesIO:
         pdf.set_xy(x, y)
         pdf.set_font("Helvetica", "B", 8)
         pdf.set_text_color(*NAVY)
-        pdf.cell(label_w, 5, label, border=0)
+        pdf.cell(label_w, 5, _t(label), border=0)
         pdf.set_font("Helvetica", "", 8)
         pdf.set_text_color(0, 0, 0)
-        pdf.cell(val_w, 5, str(value)[:35], border="B")
+        pdf.cell(val_w, 5, _t(str(value))[:35], border="B")
 
     y0 = pdf.get_y()
     emp_pair("Identificacion:", emp.identificacion,                    MARGIN,             y0)
@@ -158,17 +176,17 @@ def generate_consolidated_pdf(data: RdpConsolidatedRequest) -> io.BytesIO:
             pdf.ln(HEADER_H)
 
         vals = [
-            fila.fecha, fila.turno, fila.descripcion[:38],
-            fila.horaIngreso, fila.horaSalida,
+            _t(fila.fecha), _t(fila.turno), _t(fila.descripcion)[:38],
+            _t(fila.horaIngreso), _t(fila.horaSalida),
             f"{fila.totalHoras:.1f}" if fila.totalHoras else "",
             f"{fila.hed:.1f}"  if fila.hed  else "",
             f"{fila.hen:.1f}"  if fila.hen  else "",
             f"{fila.hedf:.1f}" if fila.hedf else "",
             f"{fila.henf:.1f}" if fila.henf else "",
-            fila.centroCostos[:20], fila.actividad[:35],
+            _t(fila.centroCostos)[:20], _t(fila.actividad)[:35],
         ]
         for (_, w, align), val in zip(COLS, vals):
-            pdf.cell(w, ROW_H, val, border=1, align=align, fill=True)
+            pdf.cell(w, ROW_H, _t(val), border=1, align=align, fill=True)
         pdf.ln(ROW_H)
 
     # ── Pie ────────────────────────────────────────────────────────────────────
