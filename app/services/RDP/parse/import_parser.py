@@ -4,14 +4,13 @@ from typing import List, Dict, Any, Optional
 
 # Columnas esperadas en la plantilla (índice 0-based)
 COL_IDENTIFICACION = 0
-COL_ES_AUSENCIA    = 1
-COL_TURNO          = 2
-COL_TIPO_AUSENCIA  = 3
-COL_TIPO_BONO      = 4
-COL_PROYECTO       = 5
-COL_HORA_INGRESO   = 6
-COL_HORA_SALIDA    = 7
-COL_NOTAS          = 8
+COL_TURNO          = 1
+COL_TIPO_AUSENCIA  = 2
+COL_TIPO_BONO      = 3
+COL_PROYECTO       = 4
+COL_HORA_INGRESO   = 5
+COL_HORA_SALIDA    = 6
+COL_NOTAS          = 7
 
 # Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
 # Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
@@ -31,11 +30,6 @@ def _extract_code(val) -> str:
     if " — " in s:
         return s.split(" — ")[0].strip()
     return s
-
-
-def _bool_field(val) -> bool:
-    s = _str(val).lower()
-    return s in ("si", "sí", "yes", "1", "true", "s")
 
 
 def _float_field(val) -> Optional[float]:
@@ -117,13 +111,13 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         errors: List[str] = []
 
         identificacion = _str(row[COL_IDENTIFICACION] if len(row) > COL_IDENTIFICACION else None)
-        es_ausencia    = _bool_field(row[COL_ES_AUSENCIA]    if len(row) > COL_ES_AUSENCIA    else None)
         turno          = _extract_code(row[COL_TURNO]         if len(row) > COL_TURNO         else None) or None
         tipo_ausencia_raw = _str(row[COL_TIPO_AUSENCIA] if len(row) > COL_TIPO_AUSENCIA else None)
         if tipo_ausencia_raw:
             tipo_ausencia = absence_name_to_code.get(tipo_ausencia_raw) or _extract_code(tipo_ausencia_raw) or None
         else:
             tipo_ausencia = None
+        es_ausencia    = bool(tipo_ausencia)
         tipo_bono      = _extract_code(row[COL_TIPO_BONO]     if len(row) > COL_TIPO_BONO     else None) or None
         proyecto       = _str(row[COL_PROYECTO]               if len(row) > COL_PROYECTO       else None) or None
         hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
@@ -133,17 +127,11 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         if not identificacion:
             errors.append("Identificación es obligatoria")
 
-        if not es_ausencia and not turno:
-            errors.append("Turno es obligatorio cuando Es Ausencia = No")
+        if not turno and not tipo_ausencia:
+            errors.append("Debe indicar un Turno o un Tipo de Ausencia")
 
-        if not es_ausencia and tipo_ausencia:
-            errors.append("Opciones excluyentes: tienes Turno Y Tipo Ausencia diligenciados. Deja solo uno según el tipo de registro.")
-
-        if es_ausencia and not tipo_ausencia:
-            errors.append("Tipo Ausencia es obligatorio cuando Es Ausencia = Si")
-
-        if es_ausencia and turno:
-            errors.append("Opciones excluyentes: tienes Es Ausencia = Sí Y un código de turno. Deja solo uno según el tipo de registro.")
+        if turno and tipo_ausencia:
+            errors.append("Opciones excluyentes: ingresa Turno o Tipo Ausencia, no ambos")
 
         rows_out.append({
             "rowIndex":       row_number,

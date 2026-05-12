@@ -19,7 +19,6 @@ OPTIONAL_BG = "F0F0F0"
 
 COLUMNS = [
     ("Identificación",   "Cédula del empleado",                         "1069742877",  True,  16),
-    ("Es Ausencia",      "Si = ausencia  /  No = turno normal",         "No",          True,  14),
     ("Turno",            "Código de turno (ver hoja Turnos)",            "ADMI",        False, 14),
     ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",     "Licencia No Remunerada", False, 22),
     ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",              "BONO_CAMPO",  False, 16),
@@ -79,8 +78,9 @@ class RdpImportTemplateService(BaseExportService):
         s.value = (
             "Instrucciones: complete una fila por empleado. "
             "Columnas con * son obligatorias. "
+            "Ingrese Turno O Tipo Ausencia (no ambos). "
             "Use los códigos de las hojas de catálogo. "
-            "No modifique las columnas A ni J."
+            "No modifique las columnas A ni I."
         )
         s.font = Font(italic=True, size=9, color="555555")
         s.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -173,20 +173,7 @@ class RdpImportTemplateService(BaseExportService):
         self._add_validations(ws, start_data_row, start_data_row + num_rows - 1)
 
     def _add_validations(self, ws, first_row: int, last_row: int):
-        # B — Es Ausencia
-        dv_bool = DataValidation(
-            type="list",
-            formula1='"No,Si"',
-            showDropDown=False,
-            allow_blank=False,
-            showErrorMessage=True,
-            errorTitle="Valor inválido",
-            error='Ingrese "Si" o "No"',
-        )
-        dv_bool.sqref = f"B{first_row}:B{last_row}"
-        ws.add_data_validation(dv_bool)
-
-        # C — Turno: dropdown + validación exclusión (solo si Es Ausencia = No)
+        # B — Turno
         dv_turno = DataValidation(
             type="list",
             formula1="Turnos!$A$2:$A$200",
@@ -196,22 +183,10 @@ class RdpImportTemplateService(BaseExportService):
             errorTitle="Código inválido",
             error="Seleccione un turno de la hoja 'Turnos'",
         )
-        dv_turno.sqref = f"C{first_row}:C{last_row}"
+        dv_turno.sqref = f"B{first_row}:B{last_row}"
         ws.add_data_validation(dv_turno)
 
-        # C extra — bloquear turno si Es Ausencia = Si
-        dv_turno_xor = DataValidation(
-            type="custom",
-            formula1=f'=OR($B{first_row}="No",$C{first_row}="")',
-            allow_blank=True,
-            showErrorMessage=True,
-            errorTitle="Opciones excluyentes",
-            error='Si "Es Ausencia" = Si, la columna Turno debe estar vacía.',
-        )
-        dv_turno_xor.sqref = f"C{first_row}:C{last_row}"
-        ws.add_data_validation(dv_turno_xor)
-
-        # D — Tipo Ausencia: dropdown + validación exclusión (solo si Es Ausencia = Si)
+        # C — Tipo Ausencia
         dv_ausencia = DataValidation(
             type="list",
             formula1="Ausencias!$A$2:$A$200",
@@ -221,22 +196,10 @@ class RdpImportTemplateService(BaseExportService):
             errorTitle="Código inválido",
             error="Seleccione un código de la hoja 'Ausencias'",
         )
-        dv_ausencia.sqref = f"D{first_row}:D{last_row}"
+        dv_ausencia.sqref = f"C{first_row}:C{last_row}"
         ws.add_data_validation(dv_ausencia)
 
-        # D extra — bloquear ausencia si Es Ausencia = No
-        dv_ausencia_xor = DataValidation(
-            type="custom",
-            formula1=f'=OR($B{first_row}="Si",$D{first_row}="")',
-            allow_blank=True,
-            showErrorMessage=True,
-            errorTitle="Opciones excluyentes",
-            error='Si "Es Ausencia" = No, la columna Tipo Ausencia debe estar vacía.',
-        )
-        dv_ausencia_xor.sqref = f"D{first_row}:D{last_row}"
-        ws.add_data_validation(dv_ausencia_xor)
-
-        # E — Tipo de Bono
+        # D — Tipo de Bono
         dv_bono = DataValidation(
             type="list",
             formula1="Bonos!$A$2:$A$200",
@@ -246,10 +209,10 @@ class RdpImportTemplateService(BaseExportService):
             errorTitle="Código inválido",
             error="Seleccione un bono de la hoja 'Bonos'",
         )
-        dv_bono.sqref = f"E{first_row}:E{last_row}"
+        dv_bono.sqref = f"D{first_row}:D{last_row}"
         ws.add_data_validation(dv_bono)
 
-        # F — Centro de Costo
+        # E — Centro de Costo
         dv_costo = DataValidation(
             type="list",
             formula1="Costos!$A$2:$A$200",
@@ -259,7 +222,7 @@ class RdpImportTemplateService(BaseExportService):
             errorTitle="Código inválido",
             error="Seleccione un centro de costo de la hoja 'Costos'",
         )
-        dv_costo.sqref = f"F{first_row}:F{last_row}"
+        dv_costo.sqref = f"E{first_row}:E{last_row}"
         ws.add_data_validation(dv_costo)
 
     def _build_catalog_sheet(

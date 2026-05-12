@@ -10,7 +10,7 @@ from ..services.HV.pdf.hv_single import HvPdfService
 
 router = APIRouter()
 
-MAX_BATCH_SIZE = 50
+MAX_BATCH_SIZE = 200
 
 
 @router.post(
