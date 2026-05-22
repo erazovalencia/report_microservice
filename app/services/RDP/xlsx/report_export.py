@@ -50,7 +50,7 @@ HEADERS = [
     ("Turno / Ausencia",       18),
     ("Tipo de Bono",           16),
     ("Centro de Costo",        18),
-    ("Actividad",              22),
+    ("Pozo / Ubicación",        22),
     ("H. Entrada",             12),
     ("H. Salida",              12),
     ("Total Horas",            12),
@@ -67,6 +67,8 @@ HEADERS = [
     ("Impacto Vac.",           13),
     ("Impacto Comp.",          13),
     ("Estado Reporte",         18),
+    ("Notas Turno",            25),
+    ("Notas Ausencia",         25),
 ]
 
 
@@ -158,6 +160,8 @@ class RdpReportExportService(BaseExportService):
                 round(row.impactoVacaciones, 4) if row.impactoVacaciones else "",
                 round(row.impactoCompensatorios, 4) if row.impactoCompensatorios else "",
                 ESTADO_LABEL.get(row.estadoReporte, row.estadoReporte),
+                row.notasTurno    or "",
+                row.notasAusencia or "",
             ]
 
             for col, val in enumerate(values, start=1):

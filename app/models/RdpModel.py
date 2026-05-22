@@ -28,6 +28,8 @@ class RdpExportRow(BaseModel):
     estadoReporte: str
     biostarEntrada: str = ""
     biostarSalida: str = ""
+    notasTurno: str = ""
+    notasAusencia: str = ""
 
 
 class RdpExportRequest(BaseModel):
@@ -81,6 +83,7 @@ class RdpConsolidatedFila(BaseModel):
     henf:          float = 0.0
     centroCostos:  str = ""
     actividad:     str = ""
+    notas:         str = ""
 
 
 class RdpConsolidatedRequest(BaseModel):

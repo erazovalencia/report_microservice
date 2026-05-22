@@ -29,7 +29,8 @@ COLS = [
     ("HEDF\nADICIONAL", 8),
     ("HENF\nADICIONAL", 8),
     ("CENTRO DE\nCOSTOS", 16),
-    ("ACTIVIDAD",       28),
+    ("POZO /\nUBICACIÓN",  28),
+    ("NOTAS",              30),
 ]
 N_COLS = len(COLS)
 
@@ -125,6 +126,7 @@ class RdpConsolidatedService(BaseExportService):
                 fila.henf         if fila.henf         else "",
                 fila.centroCostos,
                 fila.actividad,
+                fila.notas,
             ]
             for col_i, val in enumerate(vals, start=1):
                 align = "center" if col_i in (1, 2, 4, 5, 6, 7, 8, 9, 10) else "left"
