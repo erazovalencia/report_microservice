@@ -23,6 +23,7 @@ COLUMNS = [
     ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",     "Licencia No Remunerada", False, 22),
     ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",              "BONO_CAMPO",  False, 16),
     ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",    "",            False, 18),
+    ("Pozo / Ubicacion", "Descripción de actividad del turno",           "",            False, 22),
     ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",         "06:00",       False, 14),
     ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",         "18:00",       False, 14),
     ("Notas",            "Observaciones del registro",                  "",            False, 28),
@@ -80,7 +81,7 @@ class RdpImportTemplateService(BaseExportService):
             "Columnas con * son obligatorias. "
             "Ingrese Turno O Tipo Ausencia (no ambos). "
             "Use los códigos de las hojas de catálogo. "
-            "No modifique las columnas A ni I."
+            "No modifique las columnas A ni J."
         )
         s.font = Font(italic=True, size=9, color="555555")
         s.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)

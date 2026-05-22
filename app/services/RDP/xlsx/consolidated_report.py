@@ -135,17 +135,31 @@ class RdpConsolidatedService(BaseExportService):
         ws.row_dimensions[row].height = 8
         row += 1
 
-        # ── Pie: firma + total ─────────────────────────────────────────────────
-        ws.row_dimensions[row].height = 18
-        ws.merge_cells(f"A{row}:D{row}")
-        _cell(ws, row, 1, "FIRMA________________________", bold=False, size=9, align_h="left", border=Border())
+        # ── Pie: firma + totales HE segregados ────────────────────────────────
+        # Solo muestra un tipo si su total > 0; siempre muestra el total general.
+        he_totals = [
+            ("HED ADICIONAL",  data.totalHed,  "E8F5E9"),
+            ("HEN ADICIONAL",  data.totalHen,  "EDE7F6"),
+            ("HEDF ADICIONAL", data.totalHedf, "FFF3E0"),
+            ("HENF ADICIONAL", data.totalHenf, "F3E5F5"),
+        ]
+        visible_totals = [(lbl, val, bg) for lbl, val, bg in he_totals if val > 0]
+        visible_totals.append(("TOTAL HE", data.totalHorasAdicionales, "FFF2CC"))
 
-        ws.merge_cells(f"F{row}:I{row}")
-        _cell(ws, row, 6, "TOTAL HORAS ADICIONALES", bold=True, size=9,
-              bg=HEADER_ROW_BG, border=BORDER)
-        ws.merge_cells(f"J{row}:{get_column_letter(N_COLS)}{row}")
-        _cell(ws, row, 10, data.totalHorasAdicionales, bold=True, size=10,
-              bg="FFF2CC", border=BORDER)
+        for i, (lbl, val, bg_color) in enumerate(visible_totals):
+            ws.row_dimensions[row].height = 16
+            if i == 0:
+                ws.merge_cells(f"A{row}:D{row}")
+                _cell(ws, row, 1, "FIRMA________________________",
+                      bold=False, size=9, align_h="left", border=Border())
+            ws.merge_cells(f"F{row}:I{row}")
+            _cell(ws, row, 6, lbl, bold=True, size=9,
+                  bg=HEADER_ROW_BG, border=BORDER)
+            ws.merge_cells(f"J{row}:{get_column_letter(N_COLS)}{row}")
+            _cell(ws, row, 10, val if val else 0, bold=True, size=10,
+                  bg=bg_color, border=BORDER)
+            row += 1
+        row -= 1  # el freeze_panes usa el row final
 
         # Freeze panes debajo del encabezado (row 7 = primera fila de datos aprox)
         ws.freeze_panes = ws.cell(row=8, column=1)

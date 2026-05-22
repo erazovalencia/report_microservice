@@ -88,6 +88,10 @@ class RdpConsolidatedRequest(BaseModel):
     empleado:              RdpConsolidatedEmpleado
     filas:                 List[RdpConsolidatedFila]
     totalHorasAdicionales: float = 0.0
+    totalHed:              float = 0.0
+    totalHen:              float = 0.0
+    totalHedf:             float = 0.0
+    totalHenf:             float = 0.0
 
 
 class RdpParsedImportRow(BaseModel):

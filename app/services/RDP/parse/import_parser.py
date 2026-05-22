@@ -8,9 +8,10 @@ COL_TURNO          = 1
 COL_TIPO_AUSENCIA  = 2
 COL_TIPO_BONO      = 3
 COL_PROYECTO       = 4
-COL_HORA_INGRESO   = 5
-COL_HORA_SALIDA    = 6
-COL_NOTAS          = 7
+COL_ACTIVIDAD      = 5
+COL_HORA_INGRESO   = 6
+COL_HORA_SALIDA    = 7
+COL_NOTAS          = 8
 
 # Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
 # Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
@@ -120,6 +121,7 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         es_ausencia    = bool(tipo_ausencia)
         tipo_bono      = _extract_code(row[COL_TIPO_BONO]     if len(row) > COL_TIPO_BONO     else None) or None
         proyecto       = _str(row[COL_PROYECTO]               if len(row) > COL_PROYECTO       else None) or None
+        actividad      = _str(row[COL_ACTIVIDAD]              if len(row) > COL_ACTIVIDAD      else None) or None
         hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
         hora_salida    = _time_field(row[COL_HORA_SALIDA]  if len(row) > COL_HORA_SALIDA  else None)
         notas          = _str(row[COL_NOTAS]           if len(row) > COL_NOTAS           else None) or None
@@ -141,6 +143,7 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
             "tipoAusencia":   tipo_ausencia,
             "tipoBono":       tipo_bono,
             "proyecto":       proyecto,
+            "actividad":      actividad,
             "horaIngreso":    hora_ingreso,
             "horaSalida":     hora_salida,
             "notas":          notas,
