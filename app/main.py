@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from .api.routes import router as export_router
 from .api.hv_routes import router as hv_router
 from .api.rdp_routes import router as rdp_router
+from .api.vacations_routes import router as vacations_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +43,7 @@ app.add_middleware(
 app.include_router(export_router, prefix="/api/v1", tags=["export"])
 app.include_router(hv_router, prefix="/hv", tags=["hv"])
 app.include_router(rdp_router, prefix="/rdp", tags=["rdp"])
+app.include_router(vacations_router, prefix="/vacations", tags=["vacations"])
 
 
 @app.get("/")
