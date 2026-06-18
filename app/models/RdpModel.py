@@ -44,6 +44,9 @@ class RdpExportRequest(BaseModel):
 class RdpCatalogEntry(BaseModel):
     code: str
     name: str
+    # Solo turnos: horas teóricas del catálogo (referencia visual en la plantilla).
+    startHour: Optional[float] = None
+    endHour: Optional[float] = None
 
 
 class RdpEmployeeEntry(BaseModel):

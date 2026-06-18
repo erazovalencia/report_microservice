@@ -11,6 +11,22 @@ from ....models.RdpModel import RdpCatalogEntry
 thin = Side(style="thin", color="CCCCCC")
 BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 
+
+def _fmt_hour(value) -> str:
+    """Convierte una hora decimal del catálogo (6.0, 8.5) a 'HH:MM'. None/'' → ''."""
+    if value is None or value == "":
+        return ""
+    try:
+        h = float(value)
+    except (ValueError, TypeError):
+        return ""
+    hh = int(h)
+    mm = int(round((h - hh) * 60))
+    if mm == 60:
+        hh += 1
+        mm = 0
+    return f"{hh:02d}:{mm:02d}"
+
 HEADER_BG   = "1F3864"
 HEADER_FG   = "FFFFFF"
 EXAMPLE_BG  = "EAF4EA"
@@ -45,7 +61,7 @@ class RdpImportTemplateService(BaseExportService):
 
         wb = Workbook()
         self._build_main_sheet(wb, employees)
-        self._build_catalog_sheet(wb, "Turnos",    shifts,      ["Código", "Nombre"],  display="code")
+        self._build_shifts_sheet(wb, shifts)
         self._build_catalog_sheet(wb, "Ausencias", absences,    ["Nombre", "Código"],  display="name")
         self._build_catalog_sheet(wb, "Bonos",     bonuses,     ["Código", "Nombre"],  display="code")
         self._build_catalog_sheet(wb, "Costos",    workCenters, ["Código", "Nombre"],  display="name")
@@ -55,14 +71,23 @@ class RdpImportTemplateService(BaseExportService):
         buf.seek(0)
         return buf
 
+    @staticmethod
+    def _theoretical_formula(row: int, col_index: int) -> str:
+        """VLOOKUP del código de turno (col B de la fila) en la hoja 'Turnos' → hora teórica.
+        col_index: 3 = Ingreso Teórico, 4 = Salida Teórica."""
+        return f'=IFERROR(VLOOKUP($B{row},Turnos!$A:$D,{col_index},FALSE),"")'
+
     def _build_main_sheet(self, wb: Workbook, employees: list):
         ws = wb.active
         ws.title = "Reporte"
         ws.freeze_panes = "A4"
 
-        # Columna extra al final: Nombre (referencia, no importada)
-        total_cols = len(COLUMNS) + 1
-        ref_col    = len(COLUMNS) + 1
+        # Columnas extra al final (referencia, no importadas):
+        #   Nombre · Ingreso Teórico · Salida Teórica
+        ref_col    = len(COLUMNS) + 1   # J — Nombre
+        ing_col    = len(COLUMNS) + 2   # K — Ingreso Teórico (VLOOKUP al turno)
+        sal_col    = len(COLUMNS) + 3   # L — Salida Teórica  (VLOOKUP al turno)
+        total_cols = len(COLUMNS) + 3
 
         # Title
         ws.merge_cells(f"A1:{get_column_letter(total_cols)}1")
@@ -81,7 +106,7 @@ class RdpImportTemplateService(BaseExportService):
             "Columnas con * son obligatorias. "
             "Ingrese Turno O Tipo Ausencia (no ambos). "
             "Use los códigos de las hojas de catálogo. "
-            "No modifique las columnas A ni J."
+            "Las columnas Nombre / Ingreso Teórico / Salida Teórica son de referencia (no se importan)."
         )
         s.font = Font(italic=True, size=9, color="555555")
         s.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -98,13 +123,19 @@ class RdpImportTemplateService(BaseExportService):
             ws.column_dimensions[get_column_letter(col)].width = width
         ws.row_dimensions[3].height = 24
 
-        # Reference column header (col I)
-        ref_header = ws.cell(row=3, column=ref_col, value="Nombre (referencia)")
-        ref_header.font = Font(bold=True, size=9, color="777777")
-        ref_header.fill = PatternFill(start_color="E8E8E8", fill_type="solid")
-        ref_header.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        ref_header.border = BORDER
-        ws.column_dimensions[get_column_letter(ref_col)].width = 30
+        # Reference column headers (Nombre · Ingreso Teórico · Salida Teórica)
+        ref_headers = [
+            (ref_col, "Nombre (referencia)", 30),
+            (ing_col, "Ingreso Teórico",     16),
+            (sal_col, "Salida Teórica",      16),
+        ]
+        for rc, label, width in ref_headers:
+            ref_header = ws.cell(row=3, column=rc, value=label)
+            ref_header.font = Font(bold=True, size=9, color="777777")
+            ref_header.fill = PatternFill(start_color="E8E8E8", fill_type="solid")
+            ref_header.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            ref_header.border = BORDER
+            ws.column_dimensions[get_column_letter(rc)].width = width
 
         # Hint row (row 4)
         for col, (_, hint, _, required, _) in enumerate(COLUMNS, start=1):
@@ -116,7 +147,12 @@ class RdpImportTemplateService(BaseExportService):
             )
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = BORDER
-        ws.cell(row=4, column=ref_col, value="Solo referencia — no se importa").font = Font(italic=True, size=8, color="999999")
+        for rc, hint_txt in (
+            (ref_col, "Solo referencia — no se importa"),
+            (ing_col, "Automático según turno"),
+            (sal_col, "Automático según turno"),
+        ):
+            ws.cell(row=4, column=rc, value=hint_txt).font = Font(italic=True, size=8, color="999999")
         ws.row_dimensions[4].height = 20
 
         # Example row (row 5) — only shown if no employees
@@ -128,6 +164,8 @@ class RdpImportTemplateService(BaseExportService):
                 cell.alignment = Alignment(horizontal="center", vertical="center")
                 cell.border = BORDER
             ws.cell(row=5, column=ref_col, value="APELLIDO NOMBRE (ejemplo)").font = Font(italic=True, size=8, color="1E6822")
+            ws.cell(row=5, column=ing_col, value=self._theoretical_formula(5, 3)).font = Font(italic=True, size=9, color="1F3864")
+            ws.cell(row=5, column=sal_col, value=self._theoretical_formula(5, 4)).font = Font(italic=True, size=9, color="1F3864")
             ws.row_dimensions[5].height = 16
             start_data_row = 6
         else:
@@ -164,6 +202,13 @@ class RdpImportTemplateService(BaseExportService):
                     cell.font = Font(size=9, color="666666", italic=True)
                     cell.fill = PatternFill(start_color="F5F5F5", fill_type="solid")
                     cell.alignment = Alignment(vertical="center")
+                elif col in (ing_col, sal_col):
+                    # Horas teóricas — VLOOKUP al turno seleccionado en col B (solo referencia)
+                    lookup_idx = 3 if col == ing_col else 4
+                    cell.value = self._theoretical_formula(r, lookup_idx)
+                    cell.font = Font(size=9, color="1F3864")
+                    cell.fill = PatternFill(start_color="F5F5F5", fill_type="solid")
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
                 else:
                     cell.value = ""
                     cell.fill = PatternFill(start_color=bg, fill_type="solid")
@@ -225,6 +270,50 @@ class RdpImportTemplateService(BaseExportService):
         )
         dv_costo.sqref = f"E{first_row}:E{last_row}"
         ws.add_data_validation(dv_costo)
+
+    def _build_shifts_sheet(self, wb: Workbook, shifts: list):
+        """
+        Hoja 'Turnos' — col A=Código (al dropdown), B=Nombre, C=Ingreso Teórico, D=Salida Teórica.
+        Las columnas C/D alimentan el VLOOKUP de la hoja 'Reporte' (solo referencia, no se importan).
+        """
+        ws = wb.create_sheet("Turnos")
+        ws.protection.sheet = True
+        ws.protection.selectLockedCells = False
+        ws.protection.selectUnlockedCells = False
+
+        headers = ["Código", "Nombre", "Ingreso Teórico", "Salida Teórica"]
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True, color=HEADER_FG)
+            cell.fill = PatternFill(start_color=HEADER_BG, fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = BORDER
+
+        if not shifts:
+            ws.cell(row=2, column=1, value="(sin registros)")
+        else:
+            for i, entry in enumerate(shifts, start=2):
+                get = (lambda k: entry.get(k, "")) if isinstance(entry, dict) else (lambda k: getattr(entry, k, ""))
+                code  = get("code")
+                name  = get("name")
+                start = _fmt_hour(get("startHour"))
+                end   = _fmt_hour(get("endHour"))
+                bg    = "F5F5F5" if i % 2 == 0 else "FFFFFF"
+                fill  = PatternFill(start_color=bg, fill_type="solid")
+
+                values = [(code, True, "000000"), (name, False, "888888"),
+                          (start, False, "1F3864"), (end, False, "1F3864")]
+                for col, (val, bold, color) in enumerate(values, start=1):
+                    c = ws.cell(row=i, column=col, value=val)
+                    c.fill = fill
+                    c.border = BORDER
+                    c.font = Font(bold=bold, size=9, color=color)
+                    c.alignment = Alignment(horizontal="center" if col >= 3 else "left")
+
+        ws.column_dimensions["A"].width = 16
+        ws.column_dimensions["B"].width = 40
+        ws.column_dimensions["C"].width = 16
+        ws.column_dimensions["D"].width = 16
 
     def _build_catalog_sheet(
         self,
