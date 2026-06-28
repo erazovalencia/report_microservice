@@ -3,15 +3,16 @@ import openpyxl
 from typing import List, Dict, Any, Optional
 
 # Columnas esperadas en la plantilla (índice 0-based)
-COL_IDENTIFICACION = 0
-COL_TURNO          = 1
-COL_TIPO_AUSENCIA  = 2
-COL_TIPO_BONO      = 3
-COL_PROYECTO       = 4
-COL_ACTIVIDAD      = 5
-COL_HORA_INGRESO   = 6
-COL_HORA_SALIDA    = 7
-COL_NOTAS          = 8
+COL_IDENTIFICACION  = 0
+COL_TURNO           = 1
+COL_TIPO_AUSENCIA   = 2
+COL_TIPO_BONO       = 3
+COL_PROYECTO        = 4
+COL_ACTIVIDAD       = 5
+COL_HORA_INGRESO    = 6
+COL_HORA_SALIDA     = 7
+COL_SALIDA_DIA_SIG  = 8
+COL_NOTAS           = 9
 
 # Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
 # Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
@@ -40,6 +41,12 @@ def _float_field(val) -> Optional[float]:
         return float(val)
     except (ValueError, TypeError):
         return None
+
+
+def _bool_field(val) -> bool:
+    """Interpreta Sí/No (también si, true, 1, x, yes) como booleano. Vacío → False."""
+    s = _str(val).lower()
+    return s in ("sí", "si", "true", "1", "x", "yes", "verdadero")
 
 
 def _time_field(val) -> Optional[float]:
@@ -124,6 +131,7 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         actividad      = _str(row[COL_ACTIVIDAD]              if len(row) > COL_ACTIVIDAD      else None) or None
         hora_ingreso   = _time_field(row[COL_HORA_INGRESO] if len(row) > COL_HORA_INGRESO else None)
         hora_salida    = _time_field(row[COL_HORA_SALIDA]  if len(row) > COL_HORA_SALIDA  else None)
+        salida_dia_sig = _bool_field(row[COL_SALIDA_DIA_SIG] if len(row) > COL_SALIDA_DIA_SIG else None)
         notas          = _str(row[COL_NOTAS]           if len(row) > COL_NOTAS           else None) or None
 
         if not identificacion:
@@ -146,6 +154,7 @@ def parse_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
             "actividad":      actividad,
             "horaIngreso":    hora_ingreso,
             "horaSalida":     hora_salida,
+            "salidaDiaSiguiente": salida_dia_sig,
             "notas":          notas,
             "parseErrors":    errors,
         })

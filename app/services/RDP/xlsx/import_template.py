@@ -42,6 +42,7 @@ COLUMNS = [
     ("Pozo / Ubicacion", "Descripción de actividad del turno",           "",            False, 22),
     ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",         "06:00",       False, 14),
     ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",         "18:00",       False, 14),
+    ("Salida Día Siguiente", "Sí si la salida fue al día siguiente (turno >24h)", "No", False, 18),
     ("Notas",            "Observaciones del registro",                  "",            False, 28),
 ]
 
@@ -270,6 +271,19 @@ class RdpImportTemplateService(BaseExportService):
         )
         dv_costo.sqref = f"E{first_row}:E{last_row}"
         ws.add_data_validation(dv_costo)
+
+        # I — Salida Día Siguiente (Sí/No)
+        dv_next_day = DataValidation(
+            type="list",
+            formula1='"Sí,No"',
+            showDropDown=False,
+            allow_blank=True,
+            showErrorMessage=True,
+            errorTitle="Valor inválido",
+            error="Seleccione Sí o No",
+        )
+        dv_next_day.sqref = f"I{first_row}:I{last_row}"
+        ws.add_data_validation(dv_next_day)
 
     def _build_shifts_sheet(self, wb: Workbook, shifts: list):
         """
