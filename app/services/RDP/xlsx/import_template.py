@@ -29,21 +29,23 @@ def _fmt_hour(value) -> str:
 
 HEADER_BG   = "1F3864"
 HEADER_FG   = "FFFFFF"
-EXAMPLE_BG  = "EAF4EA"
 REQUIRED_BG = "FFF3CD"
 OPTIONAL_BG = "F0F0F0"
 
+# Sin fila de ejemplo en la hoja de datos: una cédula "de muestra" se confunde con
+# un empleado real y el parser tendría que adivinar dónde empiezan los datos.
+# Los ejemplos viven en los hints (fila 4) y en las hojas de catálogo.
 COLUMNS = [
-    ("Identificación",   "Cédula del empleado",                         "1069742877",  True,  16),
-    ("Turno",            "Código de turno (ver hoja Turnos)",            "ADMI",        False, 14),
-    ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",     "Licencia No Remunerada", False, 22),
-    ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",              "BONO_CAMPO",  False, 16),
-    ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",    "",            False, 18),
-    ("Pozo / Ubicacion", "Descripción de actividad del turno",           "",            False, 22),
-    ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",         "06:00",       False, 14),
-    ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",         "18:00",       False, 14),
-    ("Salida Día Siguiente", "Sí si la salida fue al día siguiente (turno >24h)", "No", False, 18),
-    ("Notas",            "Observaciones del registro",                  "",            False, 28),
+    ("Identificación",   "Cédula del empleado",                                True,  16),
+    ("Turno",            "Código de turno (ver hoja Turnos)",                  False, 14),
+    ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",            False, 22),
+    ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",                    False, 16),
+    ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",           False, 18),
+    ("Pozo / Ubicacion", "Descripción de actividad del turno",                 False, 22),
+    ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",                False, 14),
+    ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",                False, 14),
+    ("Salida Día Siguiente", "Sí si la salida fue al día siguiente (turno >24h)", False, 18),
+    ("Notas",            "Observaciones del registro",                         False, 28),
 ]
 
 
@@ -114,7 +116,7 @@ class RdpImportTemplateService(BaseExportService):
         ws.row_dimensions[2].height = 18
 
         # Column headers (row 3) — data columns
-        for col, (label, hint, _, required, width) in enumerate(COLUMNS, start=1):
+        for col, (label, hint, required, width) in enumerate(COLUMNS, start=1):
             header_label = f"{label} *" if required else label
             cell = ws.cell(row=3, column=col, value=header_label)
             cell.font = Font(bold=True, size=10, color=HEADER_FG)
@@ -139,7 +141,7 @@ class RdpImportTemplateService(BaseExportService):
             ws.column_dimensions[get_column_letter(rc)].width = width
 
         # Hint row (row 4)
-        for col, (_, hint, _, required, _) in enumerate(COLUMNS, start=1):
+        for col, (_, hint, required, _) in enumerate(COLUMNS, start=1):
             cell = ws.cell(row=4, column=col, value=hint)
             cell.font = Font(italic=True, size=8, color="666666")
             cell.fill = PatternFill(
@@ -156,24 +158,11 @@ class RdpImportTemplateService(BaseExportService):
             ws.cell(row=4, column=rc, value=hint_txt).font = Font(italic=True, size=8, color="999999")
         ws.row_dimensions[4].height = 20
 
-        # Example row (row 5) — only shown if no employees
-        if not employees:
-            for col, (_, _, example, _, _) in enumerate(COLUMNS, start=1):
-                cell = ws.cell(row=5, column=col, value=example)
-                cell.font = Font(italic=True, size=9, color="1E6822")
-                cell.fill = PatternFill(start_color=EXAMPLE_BG, fill_type="solid")
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-                cell.border = BORDER
-            ws.cell(row=5, column=ref_col, value="APELLIDO NOMBRE (ejemplo)").font = Font(italic=True, size=8, color="1E6822")
-            ws.cell(row=5, column=ing_col, value=self._theoretical_formula(5, 3)).font = Font(italic=True, size=9, color="1F3864")
-            ws.cell(row=5, column=sal_col, value=self._theoretical_formula(5, 4)).font = Font(italic=True, size=9, color="1F3864")
-            ws.row_dimensions[5].height = 16
-            start_data_row = 6
-        else:
-            start_data_row = 5
+        # Data rows always start at row 5 — the parser relies on this fixed layout.
+        start_data_row = 5
 
         # Pre-fill employee rows or blank rows
-        rows_to_fill = employees if employees else []
+        rows_to_fill = employees
         num_rows     = max(len(rows_to_fill), 50)
 
         for i in range(num_rows):

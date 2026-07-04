@@ -14,10 +14,12 @@ COL_HORA_SALIDA     = 7
 COL_SALIDA_DIA_SIG  = 8
 COL_NOTAS           = 9
 
-# Filas de encabezado a saltar cuando NO hay empleados pre-rellenos (título + instrucción + header + hint + ejemplo)
-# Cuando hay empleados, los datos empiezan en fila 5 (sin fila de ejemplo), así que skip = 4
-SKIP_ROWS_DEFAULT    = 5   # sin empleados: fila ejemplo en row 5, datos desde row 6
-SKIP_ROWS_WITH_EMPS  = 4   # con empleados: datos desde row 5
+# Encabezado fijo de la plantilla: título + instrucción + header + hint → datos desde fila 5.
+SKIP_ROWS = 4
+
+# Plantillas legacy (grupo sin empleados) traían una fila de ejemplo en la fila 5
+# con esta cédula ficticia. Se salta solo si aparece intacta.
+LEGACY_EXAMPLE_CEDULA = "1069742877"
 
 
 def _str(val) -> str:
@@ -70,14 +72,16 @@ def _time_field(val) -> Optional[float]:
 
 def _detect_skip_rows(ws) -> int:
     """
-    Detecta cuántas filas de encabezado saltar.
-    Si la fila 5 col A tiene un valor numérico (cédula pre-rellena), los datos empiezan en row 5.
-    Si la fila 5 es la fila ejemplo (valor de ejemplo), los datos empiezan en row 6.
+    Los datos siempre empiezan en la fila 5. Única excepción: plantillas legacy
+    cuya fila 5 es la fila de ejemplo intacta (cédula ficticia) — esa se salta.
+    Una fila 5 con datos pero sin cédula ya NO se descarta en silencio: se parsea
+    y sale con error visible "Identificación es obligatoria".
     """
     cell_a5 = ws.cell(row=5, column=1).value
-    if cell_a5 is not None and _str(cell_a5) not in ("", "1069742877"):
-        return SKIP_ROWS_WITH_EMPS   # datos desde row 5
-    return SKIP_ROWS_DEFAULT         # datos desde row 6
+    ref_a5  = _str(ws.cell(row=5, column=11).value).lower()  # col K: "Nombre (referencia)"
+    if _str(cell_a5) == LEGACY_EXAMPLE_CEDULA and "ejemplo" in ref_a5:
+        return SKIP_ROWS + 1   # saltar la fila ejemplo legacy: datos desde row 6
+    return SKIP_ROWS           # datos desde row 5
 
 
 def _build_absence_name_map(wb) -> Dict[str, str]:
