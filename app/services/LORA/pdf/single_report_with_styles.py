@@ -1,6 +1,7 @@
 from fpdf import FPDF
 import io
 import os
+from pathlib import Path
 from typing import Any, Dict, List
 from datetime import datetime
 from ...base import BaseExportService
@@ -68,11 +69,21 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
             # Ruta por defecto indicada: common/logo.png
             self.logo_path = "common/logo.png"
         self.pdf = FPDF(orientation="P", unit="mm", format="A4")
+        # Fuente Unicode (Courier core solo soporta Latin-1: cualquier caracter
+        # fuera de eso, como comillas tipograficas o texto pegado de WhatsApp,
+        # tumbaba la generacion). Mismas fuentes que ya usa el exportador simple.
+        BASE_DIR = Path(__file__).resolve().parents[3]
+        FONT_DIR = BASE_DIR / "fonts"
+        normal = FONT_DIR / "DejaVuSerif.ttf"
+        bold = FONT_DIR / "DejaVuSerif-Bold.ttf"
+        self.pdf.add_font("DejaVu", "", str(normal), uni=True)
+        self.pdf.add_font("DejaVu", "B", str(bold if bold.exists() else normal), uni=True)
+        self.pdf.add_font("DejaVu", "I", str(normal), uni=True)
         self.pdf.set_auto_page_break(auto=True, margin=15)
         self.pdf.add_page()
         self.pdf.set_fill_color(*self.colors['background'])
         self.pdf.rect(0, 0, 210, 297, 'F')
-        self.pdf.set_font("Courier", "", 11)
+        self.pdf.set_font("DejaVu", "", 11)
         self.pdf.set_text_color(*self.colors['text_dark'])
 
         self._draw_stamp(report_data)
@@ -103,26 +114,26 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
         self.pdf.set_fill_color(*bg)
         self.pdf.set_draw_color(*border)
         self.pdf.set_text_color(0, 0, 0)
-        self.pdf.set_font("Courier", "B", 14)
+        self.pdf.set_font("DejaVu", "B", 14)
         self.pdf.cell(45, 10, stamp_text, border=1, align='C', fill=True)
 
     def _draw_header(self, data: Dict):
-        code = data.get("loraReportCode", "Sin codigo")
-        title = data.get("reportTitle", "Sin titulo")
-        created = data.get("createdAt", datetime.now().strftime("%Y-%m-%d"))
+        code = data.get("loraReportCode") or "Sin codigo"
+        title = data.get("reportTitle") or "Sin titulo"
+        created = data.get("createdAt") or datetime.now().strftime("%Y-%m-%d")
         # Dibuja el logo centrado encima del código si está disponible
         placed_y = self._draw_logo()
         if placed_y:
             self.pdf.set_y(max(self.pdf.get_y(), placed_y))
         else:
             self.pdf.ln(20)
-        self.pdf.set_font("Courier", "B", 11)
+        self.pdf.set_font("DejaVu", "B", 11)
         self.pdf.set_text_color(*self.colors['text_brown'])
         self.pdf.cell(0, 8, f"CODIGO: {code}", ln=True)
-        self.pdf.set_font("Courier", "B", 18)
+        self.pdf.set_font("DejaVu", "B", 18)
         self.pdf.set_text_color(*self.colors['text_dark'])
         self.pdf.cell(0, 10, title.upper(), ln=True)
-        self.pdf.set_font("Courier", "", 9)
+        self.pdf.set_font("DejaVu", "", 9)
         self.pdf.set_text_color(*self.colors['text_brown'])
         self.pdf.cell(0, 8, f"Creado: {created}", ln=True)
         self._draw_line()
@@ -160,7 +171,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
     def _draw_footer(self, data: Dict):
         self.pdf.ln(10)
         self._draw_line()
-        self.pdf.set_font("Courier", "I", 8)
+        self.pdf.set_font("DejaVu", "I", 8)
         self.pdf.set_text_color(*self.colors['text_brown'])
         self.pdf.cell(0, 6, f"ID: {data.get('id', 'N/A')}", ln=True, align="R")
         self.pdf.cell(0, 5, "Documento generado automaticamente por VALERA ECOSYSTEM", ln=True, align="C")
@@ -173,7 +184,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
         self.pdf.rect(10, y, 190, 10, 'F')
         self.pdf.set_y(y + 2)
         self.pdf.set_x(15)
-        self.pdf.set_font("Courier", "B", 12)
+        self.pdf.set_font("DejaVu", "B", 12)
         self.pdf.set_text_color(*self.colors['text_brown'])
         self.pdf.cell(0, 8, title.upper(), ln=True)
         self._draw_line()
@@ -182,7 +193,7 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
 
     def _render_summary_grid(self, items: List):
         """Renderiza pares clave/valor en dos columnas con salto de línea controlado para evitar desbordes."""
-        self.pdf.set_font("Courier", "", 10)
+        self.pdf.set_font("DejaVu", "", 10)
         self.pdf.set_fill_color(*self.colors['summary_bg'])
         self.pdf.set_text_color(*self.colors['text_dark'])
         col_width = 88  # ancho por columna: x=15+88=103 izq, x=110+88=198 der (< margen 200mm)
@@ -216,13 +227,13 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
 
     def _render_paragraph(self, text: str):
         clean = str(text).replace("\n", " ").strip()
-        self.pdf.set_font("Courier", "", 10)
+        self.pdf.set_font("DejaVu", "", 10)
         self.pdf.multi_cell(0, 6, clean)
         self.pdf.ln(2)
 
     def _render_evidences(self, evidences: List):
         for e in evidences:
-            self.pdf.set_font("Courier", "", 10)
+            self.pdf.set_font("DejaVu", "", 10)
             self.pdf.cell(0, 6, f"- {e}", ln=True)
         self.pdf.ln(2)
 
@@ -232,12 +243,18 @@ class ExportSinglePDFReportWithStyle(BaseExportService):
             bg = self.colors['action_close'] if status == "close" else self.colors['action_open']
             self.pdf.set_fill_color(*bg)
             self.pdf.set_x(15)
-            self.pdf.set_font("Courier", "B", 10)
+            self.pdf.set_font("DejaVu", "B", 10)
             self.pdf.multi_cell(0, 8, f"Accion: {act.get('description', 'N/A')}", border=0, fill=True)
-            self.pdf.set_font("Courier", "", 9)
+            self.pdf.set_font("DejaVu", "", 9)
             resp = act.get("responsible", "No asignado")
             due = act.get("dueDate", "N/A")
+            # set_x antes de cada multi_cell: sin esto, la X queda donde la dejó
+            # el multi_cell anterior (no vuelve sola al margen) y con w=0 el
+            # ancho disponible puede quedar en cero — "Not enough horizontal
+            # space to render a single character", incluso con texto ASCII.
+            self.pdf.set_x(15)
             self.pdf.multi_cell(0, 6, f"Responsable: {resp}", ln=True)
+            self.pdf.set_x(15)
             self.pdf.multi_cell(0, 6, f"Fecha limite: {due}", ln=True)
             self.pdf.ln(3)
 

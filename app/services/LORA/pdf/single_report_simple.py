@@ -79,7 +79,7 @@ class ExportSinglePDFReportSimple(BaseExportService):
         self.pdf.cell(0, 8, f"ID de reporte: {data.get('id', 'N/A')}", ln=True, align="L")
         self.pdf.set_font("DejaVu", "", 10)
         self.pdf.cell(0, 6, f"Codigo: {data.get('loraReportCode', 'N/A')}", ln=True)
-        self.pdf.cell(0, 6, f"Estado: {data.get('reportStatus', 'N/A').upper()}", ln=True)
+        self.pdf.cell(0, 6, f"Estado: {(data.get('reportStatus') or 'N/A').upper()}", ln=True)
         self.pdf.cell(0, 6, f"Fecha de creacion: {data.get('createdAt', 'N/A')}", ln=True)
         self._draw_separator()
 
@@ -122,7 +122,7 @@ class ExportSinglePDFReportSimple(BaseExportService):
             desc = act.get("description", "N/A")
             resp = act.get("responsible", "N/A")
             due = act.get("dueDate", "N/A")
-            status = act.get("status", "N/A").upper()
+            status = (act.get("status") or "N/A").upper()
             result.append(f"{i}. {desc}\n   Responsable: {resp}\n   Fecha limite: {due}\n   Estado: {status}\n")
         return "\n".join(result)
 

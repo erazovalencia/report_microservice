@@ -83,7 +83,7 @@ class XLSXExportService(BaseExportService):
 
         ws.merge_cells("A1:B1")
         title = ws["A1"]
-        title.value = data.get("reportTitle", "Reporte de Hallazgo").upper()
+        title.value = (data.get("reportTitle") or "Reporte de Hallazgo").upper()
         title.font = Font(bold=True, size=14, color="1F497D")
         title.alignment = Alignment(horizontal="center")
         ws.row_dimensions[1].height = 25
@@ -167,7 +167,7 @@ class XLSXExportService(BaseExportService):
             ws.append(["Sin acciones registradas"])
         else:
             for i, act in enumerate(actions, start=2):
-                status = act.get("status", "open").lower()
+                status = (act.get("status") or "open").lower()
                 fill_color = self.colors["close_fill"] if status == "close" else self.colors["open_fill"]
 
                 ws.cell(row=i, column=1, value=act.get("description", "N/A"))
