@@ -41,7 +41,7 @@ COLUMNS = [
     ("Tipo Ausencia",    "Nombre de ausencia (ver hoja Ausencias)",            False, 22),
     ("Tipo de Bono",     "Código de bono (ver hoja Bonos)",                    False, 16),
     ("Centro de Costo",  "Código centro de costo (ver hoja Costos)",           False, 18),
-    ("Pozo / Ubicacion", "Descripción de actividad del turno",                 False, 22),
+    ("Pozo / Ubicacion", "Descripción de actividad del turno (máx. 30 caracteres)", False, 22),
     ("Hora Ingreso",     "Hora entrada real HH:MM (ej. 06:00)",                False, 14),
     ("Hora Salida",      "Hora salida real HH:MM  (ej. 18:00)",                False, 14),
     ("Salida Día Siguiente", "Sí si la salida fue al día siguiente (turno >24h)", False, 18),
