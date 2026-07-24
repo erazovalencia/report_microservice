@@ -13,6 +13,7 @@ from .api.hv_routes import router as hv_router
 from .api.rdp_routes import router as rdp_router
 from .api.vacations_routes import router as vacations_router
 from .api.attendance_routes import router as attendance_router
+from .api.employee_routes import router as employee_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,6 +47,7 @@ app.include_router(hv_router, prefix="/hv", tags=["hv"])
 app.include_router(rdp_router, prefix="/rdp", tags=["rdp"])
 app.include_router(vacations_router, prefix="/vacations", tags=["vacations"])
 app.include_router(attendance_router, prefix="/attendance", tags=["attendance"])
+app.include_router(employee_router, prefix="/employees", tags=["employees"])
 
 
 @app.get("/")
