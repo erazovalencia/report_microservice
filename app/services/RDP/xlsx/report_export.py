@@ -41,6 +41,30 @@ TIPO_LABEL = {
 thin = Side(style="thin", color="CCCCCC")
 BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 
+# Estilos de celda de datos reutilizados por referencia — antes se instanciaba un
+# Font/Alignment nuevo por CADA celda (27 cols x hasta 30k filas = hasta ~810k objetos),
+# que es el patrón conocido más lento en openpyxl (cada estilo nuevo se registra y
+# deduplica contra la StyleArray global del workbook).
+DATA_FONT    = Font(size=9)
+ALIGN_CENTER = Alignment(vertical="center", horizontal="center")
+ALIGN_LEFT   = Alignment(vertical="center", horizontal="left")
+CENTERED_COLS = {1, 3, 5, 6, 10, 11, 12, 13, 14, 15}
+
+_ROW_BG_TIPO = {
+    "TURNO":      (COLORS["turno_bg"],      "EAF4EA"),
+    "AUSENTISMO": (COLORS["ausencia_bg"],   "FEF5E7"),
+    "HORA_EXTRA": (COLORS["hora_extra_bg"], "EBF5FB"),
+    None:         (COLORS["row_even"],      COLORS["row_odd"]),
+}
+
+# PatternFill también reutilizado — antes uno nuevo por fila (hasta 30k); el color
+# real solo depende de (tipo, paridad de la fila), así que son 8 combinaciones fijas.
+ROW_FILLS = {
+    (tipo, parity): PatternFill(start_color=colors[parity], fill_type="solid")
+    for tipo, colors in _ROW_BG_TIPO.items()
+    for parity in (0, 1)
+}
+
 HEADERS = [
     ("Fecha",                  16),
     ("Unidad Organizativa",    28),
@@ -82,14 +106,9 @@ def _fmt_biostar(iso: str) -> str:
         return iso
 
 
-def _row_bg(tipo: str, row_index: int) -> str:
-    if tipo == "TURNO":
-        return COLORS["turno_bg"] if row_index % 2 == 0 else "EAF4EA"
-    if tipo == "AUSENTISMO":
-        return COLORS["ausencia_bg"] if row_index % 2 == 0 else "FEF5E7"
-    if tipo == "HORA_EXTRA":
-        return COLORS["hora_extra_bg"] if row_index % 2 == 0 else "EBF5FB"
-    return COLORS["row_even"] if row_index % 2 == 0 else COLORS["row_odd"]
+def _row_fill(tipo: str, row_index: int) -> PatternFill:
+    tipo_key = tipo if tipo in ("TURNO", "AUSENTISMO", "HORA_EXTRA") else None
+    return ROW_FILLS[(tipo_key, row_index % 2)]
 
 
 class RdpReportExportService(BaseExportService):
@@ -131,8 +150,7 @@ class RdpReportExportService(BaseExportService):
         # Data rows
         for i, row in enumerate(rows):
             r = i + 3
-            bg = _row_bg(row.tipo, i)
-            fill = PatternFill(start_color=bg, fill_type="solid")
+            fill = _row_fill(row.tipo, i)
 
             values = [
                 row.fecha,
@@ -169,8 +187,8 @@ class RdpReportExportService(BaseExportService):
                 cell.fill = fill
                 cell.border = BORDER
                 # cols centradas: Fecha(1), Cédula(3), Tipo(5), Turno/Aus(6), H.Entrada(10), H.Salida(11), TotalHoras(12), Rotación(13), BioStar(14,15)
-                cell.alignment = Alignment(vertical="center", horizontal="center" if col in (1, 3, 5, 6, 10, 11, 12, 13, 14, 15) else "left")
-                cell.font = Font(size=9)
+                cell.alignment = ALIGN_CENTER if col in CENTERED_COLS else ALIGN_LEFT
+                cell.font = DATA_FONT
 
             ws.row_dimensions[r].height = 16
 
