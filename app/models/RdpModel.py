@@ -100,6 +100,10 @@ class RdpConsolidatedRequest(BaseModel):
     totalHenf:             float = 0.0
 
 
+class RdpConsolidatedBatchRequest(BaseModel):
+    items: List[RdpConsolidatedRequest]
+
+
 class RdpParsedImportRow(BaseModel):
     rowIndex: int
     identificacion: str
