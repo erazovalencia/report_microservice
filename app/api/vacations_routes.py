@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse, JSONResponse
 
 from ..models.VacationsModel import VacationExportRequest
 from ..services.VACATIONS.xlsx.report_export import VacationReportExportService
+from ..services.VACATIONS.parse.balance_import_parser import parse_balance_import_file
 
 router = APIRouter()
 
@@ -26,3 +27,18 @@ async def export_vacations_report(payload: VacationExportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando reporte: {str(e)}")
+
+
+@router.post("/balance-import/parse")
+async def parse_vacation_balance_import(file: UploadFile = File(...)):
+    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xls")):
+        raise HTTPException(status_code=400, detail="El archivo debe ser .xlsx o .xls")
+
+    try:
+        content = await file.read()
+        rows = parse_balance_import_file(content)
+        return JSONResponse(content={"rows": rows, "total": len(rows)})
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error al procesar el archivo: {str(e)}")
