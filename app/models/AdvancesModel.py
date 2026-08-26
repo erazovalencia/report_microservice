@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class AdvancesSapBookingRow(BaseModel):
@@ -17,3 +17,40 @@ class AdvancesSapBookingRow(BaseModel):
 
 class AdvancesSapBookingExportRequest(BaseModel):
     rows: List[AdvancesSapBookingRow]
+
+
+class AdvancesSupervisionExportRow(BaseModel):
+    documentNumber: str = "—"
+    documentType: str  # ANTICIPO | CAJA_MENOR
+    employeeName: str
+    employeeDocumentId: str
+    requestedAmount: float
+    approvedAmount: Optional[float] = None
+    status: str
+    createdAt: str = ""
+    openedAt: str = ""
+    erpAdvanceNumber: str = ""
+    legalizationApprovedAt: str = ""
+
+
+class AdvancesSupervisionExportRequest(BaseModel):
+    rows: List[AdvancesSupervisionExportRow]
+    scope: str = ""  # "accounting" | "treasury" — solo para el título del archivo
+
+
+class AdvancesInvoiceExportRow(BaseModel):
+    invoiceNumber: str
+    chargeNature: str  # ANTICIPO | CAJA_MENOR | TC | NINGUNA
+    documentNumber: str = "—"
+    thirdPartyTaxId: str
+    thirdPartyName: str
+    amount: float
+    concept: str
+    status1: str
+    status2: str
+    registeredByName: str
+    createdAt: str = ""
+
+
+class AdvancesInvoiceExportRequest(BaseModel):
+    rows: List[AdvancesInvoiceExportRow]
