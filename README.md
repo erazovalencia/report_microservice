@@ -1,18 +1,18 @@
 # Export Files Microservice
 
-> ⚠️ **README OBSOLETO (2026-06-24).** Este documento describe un esqueleto genérico (`pdf_service.py`/`doc_service.py`/`xls_service.py`, endpoints `/api/export/*`, scripts `install-*.bat`) que **ya no existe**. El servicio real está organizado por dominio (LORA / HV / RDP / VACATIONS) con auth `x-api-key`. **Fuente de verdad: [CONTEXT.md](./CONTEXT.md) y [ESTADO.md](./ESTADO.md).** Pendiente reescribir o eliminar este README.
+> **README OBSOLETO (2026-06-24).** Este documento describe un esqueleto genérico (`pdf_service.py`/`doc_service.py`/`xls_service.py`, endpoints `/api/export/*`, scripts `install-*.bat`) que **ya no existe**. El servicio real está organizado por dominio (LORA / HV / RDP / VACATIONS) con auth `x-api-key`. **Fuente de verdad: [CONTEXT.md](./CONTEXT.md) y [ESTADO.md](./ESTADO.md).** Pendiente reescribir o eliminar este README.
 
 Microservicio para exportar datos en diferentes formatos de archivo (PDF, DOCX, XLSX).
 
 ## Características
 
-- ✅ Exportación a PDF usando fpdf2
-- ✅ Exportación a DOCX usando python-docx
-- ✅ Exportación a XLSX usando openpyxl
-- ✅ API REST con FastAPI
-- ✅ Documentación automática con Swagger
-- ✅ Contenedorización con Docker
-- ✅ Validación de datos con Pydantic
+- Exportación a PDF usando fpdf2
+- Exportación a DOCX usando python-docx
+- Exportación a XLSX usando openpyxl
+- API REST con FastAPI
+- Documentación automática con Swagger
+- Contenedorización con Docker
+- Validación de datos con Pydantic
 
 ## Instalación
 

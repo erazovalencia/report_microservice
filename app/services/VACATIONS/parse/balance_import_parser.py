@@ -2,16 +2,14 @@ import io
 import openpyxl
 from typing import List, Dict, Any, Optional
 
-# Encabezados aceptados por columna (case-insensitive, sin tildes ya normalizado
-# por el caller). El consolidado real de Nova trae 2 hojas: la primera con
-# columnas de empleado sin saldo, y otra (típicamente "Hoja2") con
-# CodigoEmp/NombreEmp/EMPRESA/Cantidad — esa es la que trae el saldo real.
-# Se detecta por encabezado, no por nombre/posición de hoja, para tolerar
-# variaciones entre exports.
-DOC_HEADERS  = {"codigoemp", "documento", "cedula", "cédula", "cc"}
-NAME_HEADERS = {"nombreemp", "nombre", "empleado"}
-COMPANY_HEADERS = {"empresa", "compañia", "compania"}
-ACCRUED_HEADERS = {"cantidad", "vacaciones", "saldo", "dias", "días"}
+# Formato estándar (2026-08-25): RH no logró producir de forma confiable el
+# consolidado multi-hoja/multi-columna original de Nova — se adoptó un
+# formato simple de una sola hoja con 2 columnas: documento y saldo. Nombre y
+# empresa YA NO vienen del archivo — se resuelven del lado de VALERA
+# (User/UserInformation/EmployeeContract) al momento de cargar, evitando
+# depender de nombres de empresa inconsistentes entre Nova y VALERA.
+DOC_HEADERS = {"documento", "codigoemp", "cedula", "cédula", "cc"}
+ACCRUED_HEADERS = {"saldo", "cantidad", "vacaciones", "dias", "días"}
 
 
 def _norm(val) -> str:
@@ -45,11 +43,8 @@ def _norm_document_id(val) -> str:
 def _find_balance_sheet(wb):
     """
     Recorre las hojas buscando la que tenga columna de documento Y de saldo
-    CON datos reales. El consolidado de Nova trae más de una hoja con
-    encabezados de saldo (ej. "vacaciones") pero solo una con la columna
-    realmente poblada (ej. "Cantidad" en Hoja2) — una hoja candidata cuyo
-    saldo viene vacío en todas las filas se descarta, no se asume la primera
-    coincidencia de encabezado.
+    con datos reales — por encabezado, no por nombre/posición de hoja, para
+    tolerar variaciones menores entre exports mensuales.
     """
     for ws in wb.worksheets:
         first_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
@@ -68,9 +63,7 @@ def _find_balance_sheet(wb):
         if not has_data:
             continue
 
-        name_idx = _find_col(headers, NAME_HEADERS)
-        company_idx = _find_col(headers, COMPANY_HEADERS)
-        return ws, doc_idx, name_idx, company_idx, acc_idx
+        return ws, doc_idx, acc_idx
     return None
 
 
@@ -81,9 +74,9 @@ def parse_balance_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
     if found is None:
         raise ValueError(
             "No se encontró una hoja con columnas de documento y saldo "
-            "(ej. CodigoEmp/Documento y Cantidad/Vacaciones/Saldo)"
+            "(ej. documento/cedula y saldo/cantidad)"
         )
-    ws, doc_idx, name_idx, company_idx, acc_idx = found
+    ws, doc_idx, acc_idx = found
 
     rows_out: List[Dict[str, Any]] = []
     for raw_row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
@@ -94,8 +87,6 @@ def parse_balance_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         errors: List[str] = []
 
         document_id = _norm_document_id(row[doc_idx] if doc_idx < len(row) else None)
-        employee_name = _norm(row[name_idx]) if name_idx is not None and name_idx < len(row) else ""
-        company = _norm(row[company_idx]) if company_idx is not None and company_idx < len(row) else None
         accrued_raw = row[acc_idx] if acc_idx < len(row) else None
 
         if not document_id:
@@ -113,8 +104,6 @@ def parse_balance_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         rows_out.append({
             "rowIndex": row_number,
             "documentId": document_id,
-            "employeeName": employee_name,
-            "company": company,
             "accrued": accrued,
             "parseErrors": errors,
         })
