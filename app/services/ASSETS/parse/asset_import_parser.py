@@ -48,6 +48,9 @@ MATERIAL_HEADERS = _headers("Material")
 MODIFIED_AT_HEADERS = _headers("Modificado el", "Modif.el")
 MODIFIED_BY_HEADERS = _headers("Modificado por", "Modif.por")
 SYSTEM_STATUS_HEADERS = _headers("Status sistema", "Stat.sist.")
+# "T" (Tipo) solo existe en el export de lista (equipos2309.XLS) — IH08 no lo
+# trae. Valor crudo (I/H/M/V); el mapeo a assetLine lo decide el caller.
+EQUIPMENT_TYPE_HEADERS = _headers("T")
 
 # "1,52005E+11": Excel/SAP convirtió el Activo fijo a notación científica y la
 # precisión ya se perdió en el export (22 valores distintos en 8.656 filas) — no
@@ -148,6 +151,7 @@ def _locate_columns(headers: List[str]) -> Optional[Dict[str, Any]]:
         "modifiedAt": _find_col(headers, MODIFIED_AT_HEADERS),
         "modifiedBy": _find_col(headers, MODIFIED_BY_HEADERS),
         "systemStatus": _find_col(headers, SYSTEM_STATUS_HEADERS),
+        "equipmentType": _find_col(headers, EQUIPMENT_TYPE_HEADERS),
     }
 
 
@@ -260,6 +264,7 @@ def parse_asset_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         sap_modified_at = _norm_date(_cell(row, cols["modifiedAt"]))
         sap_modified_by = _norm(_cell(row, cols["modifiedBy"])) or None
         sap_system_status = _norm(_cell(row, cols["systemStatus"])) or None
+        equipment_type_code = _norm(_cell(row, cols["equipmentType"])) or None
 
         rows_out.append({
             "rowIndex": row_number,
@@ -285,6 +290,7 @@ def parse_asset_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
             "sapModifiedAt": sap_modified_at,
             "sapModifiedBy": sap_modified_by,
             "sapSystemStatus": sap_system_status,
+            "equipmentTypeCode": equipment_type_code,
             "parseErrors": errors,
         })
 

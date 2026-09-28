@@ -4,7 +4,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from ..services.ASSETS.parse.asset_import_parser import parse_asset_import_file
 from ..services.ASSETS.parse.asset_bulk_edit_parser import parse_asset_bulk_edit_file
 from ..services.ASSETS.xlsx.asset_export import AssetExportService
-from ..models.AssetModel import AssetExportRequest
+from ..services.ASSETS.pdf.asset_assignment_pdf import generate_asset_assignment_pdf
+from ..models.AssetModel import AssetExportRequest, AssetAssignmentNoticeRequest
 
 router = APIRouter()
 
@@ -56,3 +57,19 @@ async def export_assets(payload: AssetExportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando el inventario: {str(e)}")
+
+
+@router.post("/assignment/pdf")
+async def asset_assignment_pdf(payload: AssetAssignmentNoticeRequest):
+    if not payload.assets:
+        raise HTTPException(status_code=400, detail="El formato de asignación requiere al menos un activo")
+
+    try:
+        buffer = generate_asset_assignment_pdf(payload)
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="asignacion_activos.pdf"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando el formato de asignación: {str(e)}")

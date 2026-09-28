@@ -18,8 +18,9 @@ COLORS = {
 # duplican acá (no hay forma de compartir código TS/Python), mismo criterio
 # que TIPO_LABEL/ESTADO_LABEL de RDP/Asistencia.
 ASSET_LINE_LABEL = {
-    "EMPLOYEE_DEVICE": "Dispositivos para asignar",
     "FIELD_EQUIPMENT": "Equipos de operación",
+    "EMPLOYEE_DEVICE": "Dispositivos para asignar IT",
+    "EMPLOYEE_DEVICE_AF": "Dispositivos para asignar AF",
 }
 
 ASSET_STATUS_LABEL = {

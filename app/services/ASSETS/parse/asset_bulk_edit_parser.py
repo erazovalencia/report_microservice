@@ -10,9 +10,9 @@ from ._text import norm, norm_header, headers, find_col
 # refresca los campos de origen SAP. Este matchea por assetTag ("Nº
 # inventario", el ID interno de VALERA, único).
 #
-# Alcance acotado a propósito (2026-09-24, decisión explícita): Denominación,
+# Alcance acotado a propósito: Línea, Denominación,
 # Local, Ubicación técnica, Emplazamiento, Ce.emplazam., Elemento PEP, Centro
-# coste, Sociedad y Equipo superior — el resto de columnas del export (Línea,
+# coste, Sociedad y Equipo superior — el resto de columnas del export (
 # Categoría, Estado, Fabricante, Modelo, Serial, Nº inventario SAP, Status
 # sistema SAP, Asignado a) quedan de solo lectura en este import hasta que se
 # decida ampliar el alcance. "Equipo superior" viaja como código SAP del padre
@@ -20,6 +20,7 @@ from ._text import norm, norm_header, headers, find_col
 
 HEADER_SCAN_ROWS = 10
 ASSET_TAG_HEADERS = headers("Nº inventario")
+LINE_HEADERS = headers("Línea")
 DESCRIPTION_HEADERS = headers("Denominación")
 LOCATION_HEADERS = headers("Local")
 TECHNICAL_LOCATION_HEADERS = headers("Ubicación técnica", "Ubicac.técnica")
@@ -37,6 +38,7 @@ def _locate_columns(row_headers: List[str]) -> Optional[Dict[str, Any]]:
         return None
     return {
         "assetTag": asset_tag_idx,
+        "assetLine": find_col(row_headers, LINE_HEADERS),
         "description": find_col(row_headers, DESCRIPTION_HEADERS),
         "sapLocation": find_col(row_headers, LOCATION_HEADERS),
         "sapTechnicalLocation": find_col(row_headers, TECHNICAL_LOCATION_HEADERS),
@@ -105,6 +107,7 @@ def parse_asset_bulk_edit_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         rows_out.append({
             "rowIndex": row_number,
             "assetTag": asset_tag,
+            "assetLine": norm(_cell(row, cols["assetLine"])) or None,
             "description": norm(_cell(row, cols["description"])) or None,
             "sapLocation": norm(_cell(row, cols["sapLocation"])) or None,
             "sapTechnicalLocation": norm(_cell(row, cols["sapTechnicalLocation"])) or None,
