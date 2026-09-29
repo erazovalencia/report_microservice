@@ -7,8 +7,8 @@ import openpyxl
 
 from ._text import norm as _norm, norm_header as _norm_header, headers as _headers, find_col as _find_col
 
-# Import masivo de activos desde un export de equipos de SAP (ver
-# valera/ASSETS_INVENTORY_DESIGN.md §2/§6). Acepta dos formatos: el .xlsx de
+# Import masivo de activos desde un export de equipos de SAP. Acepta dos
+# formatos: el .xlsx de
 # IH08 y el export de lista de SAP guardado como ".XLS" (equipos2309.XLS), que
 # en realidad es texto UTF-16 separado por tabuladores — el contenido se
 # detecta por sus bytes, nunca por la extensión. Detección de columnas por

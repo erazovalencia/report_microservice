@@ -2,9 +2,9 @@ import io
 import openpyxl
 from typing import List, Dict, Any, Optional
 
-# Formato estándar (2026-08-25): RH no logró producir de forma confiable el
-# consolidado multi-hoja/multi-columna original de Nova — se adoptó un
-# formato simple de una sola hoja con 2 columnas: documento y saldo. Nombre y
+# Formato estándar: una sola hoja con 2 columnas (documento y saldo), en vez
+# del consolidado multi-hoja original de Nova, que no se produce de forma
+# confiable. Nombre y
 # empresa YA NO vienen del archivo — se resuelven del lado de VALERA
 # (User/UserInformation/EmployeeContract) al momento de cargar, evitando
 # depender de nombres de empresa inconsistentes entre Nova y VALERA.

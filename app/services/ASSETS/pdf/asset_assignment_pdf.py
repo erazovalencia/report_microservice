@@ -184,7 +184,8 @@ def generate_asset_assignment_pdf(data: AssetAssignmentNoticeRequest) -> io.Byte
     pdf.ln(4)
     half = CONTENT_W / 2
     y = pdf.get_y()
-    _signature(pdf, MARGIN, half, "Entrega", data.deliveredBy)
+    delivered_detail = f"C.C. {data.deliveredByDocumentId}" if data.deliveredByDocumentId else None
+    _signature(pdf, MARGIN, half, "Entrega", data.deliveredBy, delivered_detail)
     pdf.set_y(y)
     _signature(pdf, MARGIN + half, half, "Recibe", data.employeeName, f"C.C. {data.employeeDocumentId}")
 

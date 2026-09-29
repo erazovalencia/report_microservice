@@ -61,8 +61,7 @@ HEADERS = [
 ]
 
 # Estilos de celda reutilizados por referencia — instanciar Font/Alignment por
-# celda es el patrón más lento de openpyxl (ver fix de RdpReportExportService,
-# 2026-07-27); con un catálogo de ~21k filas esto no es opcional acá.
+# celda es el patrón más lento de openpyxl; con un catálogo de ~21k filas esto no es opcional acá.
 DATA_FONT = Font(size=9)
 ALIGN_CENTER = Alignment(vertical="center", horizontal="center")
 ALIGN_LEFT = Alignment(vertical="center", horizontal="left")

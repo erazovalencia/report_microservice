@@ -8,14 +8,13 @@ from ...base import BaseExportService
 from ....models.AdvancesModel import AdvancesSapBookingRow
 
 # Layout real de 43 columnas de la plantilla de cargue FI que entregó
-# Gerencia (MASIVOfinal2.xlsx, hoja "Plantilla" — ver
-# ANTICIPOS_SAP_CARGUE_DESIGN.md §4). 3 filas de metadatos antes de los
+# Gerencia (MASIVOfinal2.xlsx, hoja "Plantilla"). 3 filas de metadatos antes de los
 # datos reales, igual que el archivo original:
 #   fila 1 = nombre humano del campo
 #   fila 2 = código técnico SAP (lo que SAP realmente lee)
 #   fila 3 = longitud/tipo de campo SAP — restricción dura, no negociable
 # Solo el bloque 1 (columnas P-V) está en uso hoy; los bloques 2-4
-# (columnas W-AQ) quedan reservados y siempre en blanco (§5.1).
+# (columnas W-AQ) quedan reservados y siempre en blanco.
 SAP_COLUMNS = [
     ("FI: Relación de operaciones contables", "BUSCS", "C(001)"),
     ("Cuenta o matchcode para la siguiente posición", "ACCNT", "C(010)"),
@@ -64,8 +63,7 @@ SAP_COLUMNS = [
 TOTAL_COLUMNS = len(SAP_COLUMNS)  # 43 (A..AQ)
 
 # Estilos reutilizados por referencia — instanciar uno nuevo por celda/fila es
-# el patrón más lento conocido en openpyxl (decisión 2026-07-27,
-# RdpReportExportService).
+# el patrón más lento conocido en openpyxl.
 HEADER_NAME_FONT = Font(bold=True, size=9)
 HEADER_CODE_FONT = Font(bold=True, size=9, color="1F3864")
 HEADER_FORMAT_FONT = Font(italic=True, size=8, color="808080")
@@ -77,7 +75,7 @@ ALIGN_LEFT = Alignment(vertical="center", horizontal="left")
 class AdvancesSapBookingExportService(BaseExportService):
     """
     Genera el archivo de cargue masivo a SAP en el layout real de 43
-    columnas (ANTICIPOS_SAP_CARGUE_DESIGN.md, Etapa 3). Cada fila de entrada
+    columnas. Cada fila de entrada
     ya trae los valores resueltos por valera (match de acreedor, cuenta
     contable del servicio, centro de costo, texto armado) — este servicio
     solo vuelca esos valores en las columnas A-V exactas; las columnas
@@ -134,7 +132,7 @@ class AdvancesSapBookingExportService(BaseExportService):
                 row.xmwst,
                 row.mwskz,
                 row.sgtxt,
-                None, None, None, None,  # L, M, N, O — retención, sin uso en v1 (§4)
+                None, None, None, None,  # L, M, N, O — retención, sin uso en v1
                 row.hkont_01,
                 row.wrbtr_01,
                 row.mwskz_01,
@@ -142,7 +140,7 @@ class AdvancesSapBookingExportService(BaseExportService):
                 row.kostl_01,
                 row.aufnr_01,
                 row.projk_01,
-                # W..AQ (bloques 2-4) — reservados, siempre vacíos (§5.1)
+                # W..AQ (bloques 2-4) — reservados, siempre vacíos
             ]
 
             for col, val in enumerate(values, start=1):

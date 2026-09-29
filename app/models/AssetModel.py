@@ -49,6 +49,7 @@ class AssetAssignmentNoticeRequest(BaseModel):
     company: Optional[str] = None
     authorizedBy: Optional[str] = None
     deliveredBy: Optional[str] = None
+    deliveredByDocumentId: Optional[str] = None
     assignedAt: str
     condition: Optional[str] = None
     assets: List[AssetAssignmentNoticeAsset]
