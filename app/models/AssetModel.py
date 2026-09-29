@@ -30,6 +30,40 @@ class AssetExportRequest(BaseModel):
     rows: List[AssetExportRow]
 
 
+class AssetHistoryExportAsset(BaseModel):
+    """El activo como está hoy (cabecera del Excel del historial)."""
+    assetTag: str
+    sapEquipmentCode: Optional[str] = None
+    description: Optional[str] = None
+    assetLine: str
+    status: str
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    serialNumber: Optional[str] = None
+    currentAssignment: Optional[str] = None
+
+
+class AssetHistoryExportRow(BaseModel):
+    """Un movimiento con los textos ya resueltos en español por valera."""
+    type: str
+    date: str
+    movement: str
+    detail: str
+    statusBefore: Optional[str] = None
+    statusAfter: Optional[str] = None
+    assignee: Optional[str] = None
+    note: Optional[str] = None
+    actor: Optional[str] = None
+    source: str
+
+
+class AssetHistoryExportRequest(BaseModel):
+    asset: AssetHistoryExportAsset
+    rows: List[AssetHistoryExportRow]
+    generatedAt: str
+    generatedBy: Optional[str] = None
+
+
 class AssetAssignmentNoticeAsset(BaseModel):
     assetTag: str
     sapEquipmentCode: Optional[str] = None

@@ -24,6 +24,7 @@ ASSET_LINE_LABEL = {
 }
 
 ASSET_STATUS_LABEL = {
+    "DISPONIBLE": "Disponible",
     "OPERATIVO": "Operativo",
     "EN_MANTENIMIENTO": "En mantenimiento",
     "EN_CONSTRUCCION": "En construcción",

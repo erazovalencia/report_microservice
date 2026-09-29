@@ -4,8 +4,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from ..services.ASSETS.parse.asset_import_parser import parse_asset_import_file
 from ..services.ASSETS.parse.asset_bulk_edit_parser import parse_asset_bulk_edit_file
 from ..services.ASSETS.xlsx.asset_export import AssetExportService
+from ..services.ASSETS.xlsx.asset_history_export import AssetHistoryExportService
 from ..services.ASSETS.pdf.asset_assignment_pdf import generate_asset_assignment_pdf
-from ..models.AssetModel import AssetExportRequest, AssetAssignmentNoticeRequest
+from ..models.AssetModel import AssetExportRequest, AssetAssignmentNoticeRequest, AssetHistoryExportRequest
 
 router = APIRouter()
 
@@ -57,6 +58,19 @@ async def export_assets(payload: AssetExportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando el inventario: {str(e)}")
+
+
+@router.post("/history/export")
+async def export_asset_history(payload: AssetHistoryExportRequest):
+    try:
+        buffer = AssetHistoryExportService().generate_file(payload)
+        return StreamingResponse(
+            buffer,
+            media_type=XLSX_MIME,
+            headers={"Content-Disposition": 'attachment; filename="historial_activo.xlsx"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando el historial del activo: {str(e)}")
 
 
 @router.post("/assignment/pdf")
