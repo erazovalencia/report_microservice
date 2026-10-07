@@ -20,7 +20,7 @@ class AdvancesSapBookingRow(BaseModel):
     bldat: str                  # C — fecha de la factura, DD.MM.YYYY
     xblnr: str = ""             # D — en blanco
     budat: str                  # E — fecha de contabilización, constante POR LOTE
-    blart: str = "DS"           # F — constante
+    blart: str = "DS"           # F — por factura: KR (factura electrónica) o DS (documento soporte), lo resuelve el caller
     wrbtr: float                # G — valor total de la factura
     waers: str = "COP"          # H — constante
     xmwst: str = "X"            # I — constante
