@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from ..services.ASSETS.parse.asset_import_parser import parse_asset_import_file
+from ..services.ASSETS.parse.asset_import_parser import parse_asset_import_file, is_creation_template
 from ..services.ASSETS.parse.asset_bulk_edit_parser import parse_asset_bulk_edit_file
 from ..services.ASSETS.xlsx.asset_export import AssetExportService
+from ..services.ASSETS.xlsx.asset_import_template import AssetImportTemplateService
 from ..services.ASSETS.xlsx.asset_history_export import AssetHistoryExportService
 from ..services.ASSETS.pdf.asset_assignment_pdf import generate_asset_assignment_pdf
 from ..models.AssetModel import AssetExportRequest, AssetAssignmentNoticeRequest, AssetHistoryExportRequest
@@ -21,11 +22,26 @@ async def parse_asset_import(file: UploadFile = File(...)):
     try:
         content = await file.read()
         rows = parse_asset_import_file(content)
-        return JSONResponse(content={"rows": rows, "total": len(rows)})
+        # createOnly: la plantilla de alta se llena a mano; el consumidor no debe
+        # tratar sus celdas vacías como datos de SAP sobre un activo existente.
+        return JSONResponse(content={"rows": rows, "total": len(rows), "createOnly": is_creation_template(content)})
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error al procesar el archivo: {str(e)}")
+
+
+@router.get("/import/template")
+async def asset_import_template():
+    try:
+        buffer = AssetImportTemplateService().generate_file()
+        return StreamingResponse(
+            buffer,
+            media_type=XLSX_MIME,
+            headers={"Content-Disposition": 'attachment; filename="plantilla_alta_activos.xlsx"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando la plantilla de alta: {str(e)}")
 
 
 @router.post("/bulk-edit/parse")

@@ -52,6 +52,17 @@ SYSTEM_STATUS_HEADERS = _headers("Status sistema", "Stat.sist.")
 # trae. Valor crudo (I/H/M/V); el mapeo a assetLine lo decide el caller.
 EQUIPMENT_TYPE_HEADERS = _headers("T")
 
+# Hoja de la plantilla de alta que genera este servicio. Un archivo con esta
+# hoja se importa en modo "solo crear": la plantilla se llena a mano, y una
+# celda vacía ahí no significa "SAP dice vacío" como en un export real; sobre
+# un activo existente borraría datos.
+ASSET_IMPORT_TEMPLATE_SHEET = "Alta de activos"
+
+# Encabezados que solo existen en el "Exportar Excel" del panel de activos:
+# ese archivo trae activos ya creados y se reimporta por "Editar en lote".
+_VALERA_EXPORT_HEADERS = _headers("Equipo (SAP)", "Nº inventario SAP")
+_HEADER_SCAN_ROWS = 5
+
 # "1,52005E+11": Excel/SAP convirtió el Activo fijo a notación científica y la
 # precisión ya se perdió en el export (22 valores distintos en 8.656 filas) — no
 # es recuperable, mejor vacío que un dato falso. Hay que re-exportar la columna
@@ -160,6 +171,7 @@ Table = Tuple[Dict[str, Any], Iterable[Tuple[int, Sequence]]]
 
 def _table_from_workbook(file_bytes: bytes) -> Optional[Table]:
     wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), data_only=True)
+    header_without_data = False
     for ws in wb.worksheets:
         first_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
         if not first_row:
@@ -174,7 +186,37 @@ def _table_from_workbook(file_bytes: bytes) -> Optional[Table]:
         )
         if has_data:
             return cols, enumerate(ws.iter_rows(min_row=2, values_only=True), start=2)
+        header_without_data = True
+
+    if header_without_data:
+        raise ValueError("El archivo tiene la columna 'Equipo' pero ninguna fila con el código de equipo diligenciado")
+    if _is_valera_export(wb):
+        raise ValueError(
+            "Este archivo tiene el formato de \"Exportar Excel\" de VALERA, que sirve para \"Editar en lote\" "
+            "activos que ya existen. Para dar de alta activos nuevos descarga la plantilla desde \"Importar masivo\"."
+        )
     return None
+
+
+def _is_valera_export(wb) -> bool:
+    # El export del panel pone un título en la fila 1 y los encabezados en la 2,
+    # así que se revisan las primeras filas, no solo la primera.
+    for ws in wb.worksheets:
+        for row in ws.iter_rows(min_row=1, max_row=_HEADER_SCAN_ROWS, values_only=True):
+            if any(_norm_header(c) in _VALERA_EXPORT_HEADERS for c in row):
+                return True
+    return False
+
+
+def is_creation_template(file_bytes: bytes) -> bool:
+    """True si el archivo es la plantilla de alta (por el nombre de su hoja)."""
+    if file_bytes[:2] != b"PK":
+        return False
+    wb = openpyxl.load_workbook(filename=io.BytesIO(file_bytes), read_only=True)
+    try:
+        return ASSET_IMPORT_TEMPLATE_SHEET in wb.sheetnames
+    finally:
+        wb.close()
 
 
 def _decode_text_export(file_bytes: bytes) -> str:
