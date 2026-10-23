@@ -60,7 +60,23 @@ HEADERS = [
     ("Motivo",           35),
     ("Motivo Rechazo",   35),
     ("Observaciones",    35),
+    ("Formato TH-F-011", 16),
 ]
+
+FORMATO_COL = len(HEADERS)
+
+
+def _text(ws, row: int, column: int, value):
+    """
+    Celda de texto. openpyxl guarda como fórmula cualquier string que empiece
+    con "=", y nombre, motivo y observaciones los escriben usuarios: forzar el
+    tipo texto evita que un valor capturado se ejecute como fórmula al abrir el
+    archivo.
+    """
+    cell = ws.cell(row=row, column=column, value=value)
+    if isinstance(value, str) and value.startswith("="):
+        cell.data_type = "s"
+    return cell
 
 
 def _fmt_datetime(iso: str) -> str:
@@ -144,7 +160,7 @@ class VacationReportExportService(BaseExportService):
             ]
 
             for col, val in enumerate(values, start=1):
-                cell = ws.cell(row=r, column=col, value=val)
+                cell = _text(ws, r, col, val)
                 cell.fill = fill
                 cell.border = BORDER
                 # cols centradas: fechas, cédula, tipo, estado y numéricas
@@ -153,6 +169,19 @@ class VacationReportExportService(BaseExportService):
                     horizontal="center" if col in (1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14) else "left",
                 )
                 cell.font = Font(size=9)
+
+            # Vínculo al formato: abre VALERA, que exige sesión y permiso para
+            # entregar el archivo; el XLSX nunca lleva el documento ni una URL
+            # directa al almacenamiento.
+            formato = ws.cell(row=r, column=FORMATO_COL, value="Ver formato" if row.formatoUrl else "Sin formato")
+            if row.formatoUrl:
+                formato.hyperlink = row.formatoUrl
+                formato.font = Font(size=9, color="0563C1", underline="single")
+            else:
+                formato.font = Font(size=9, color="94A3B8")
+            formato.fill = fill
+            formato.border = BORDER
+            formato.alignment = Alignment(vertical="center", horizontal="center")
 
             ws.row_dimensions[r].height = 16
 

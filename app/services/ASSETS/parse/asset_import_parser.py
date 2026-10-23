@@ -262,7 +262,8 @@ def parse_asset_import_file(file_bytes: bytes) -> List[Dict[str, Any]]:
     )
     if table is None:
         raise ValueError(
-            "No se encontró una columna 'Equipo' (export de equipos de SAP: IH08 .xlsx o lista .XLS)"
+            "No se encontró la columna 'Equipo'. Sube la plantilla de alta (botón \"Descargar plantilla\") "
+            "o un export de equipos de SAP (IH08 .xlsx o lista .XLS)."
         )
     cols, numbered_rows = table
 

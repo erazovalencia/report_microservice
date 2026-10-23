@@ -30,6 +30,12 @@ PEP_HEADERS = headers("Elemento PEP")
 COST_CENTER_HEADERS = headers("Centro coste", "Ce.coste")
 COMPANY_HEADERS = headers("Sociedad", "Soc.")
 PARENT_EQUIPMENT_HEADERS = headers("Equipo superior", "EquiSuper.")
+# "Equipo" a secas es la columna del código SAP en IH08, en la lista .XLS y en
+# la plantilla de alta; el "Exportar Excel" de VALERA la titula "Equipo (SAP)".
+# Esos archivos también traen "Nº inventario", "Denominación" o "Equipo
+# superior": sin este corte se leerían como edición y una placa que coincida con
+# un activo existente lo sobrescribiría.
+IMPORT_FILE_HEADERS = headers("Equipo")
 
 
 def _locate_columns(row_headers: List[str]) -> Optional[Dict[str, Any]]:
@@ -79,7 +85,13 @@ def parse_asset_bulk_edit_file(file_bytes: bytes) -> List[Dict[str, Any]]:
     rows_iter = None
     for ws in wb.worksheets:
         for header_row_number, header_row in enumerate(ws.iter_rows(min_row=1, max_row=HEADER_SCAN_ROWS, values_only=True), start=1):
-            found = _locate_columns([norm_header(c) for c in header_row])
+            row_headers = [norm_header(c) for c in header_row]
+            if any(h in IMPORT_FILE_HEADERS for h in row_headers):
+                raise ValueError(
+                    "Este archivo es la plantilla de alta o un export de equipos de SAP: súbelo en \"Importar masivo\". "
+                    "\"Editar en lote\" recibe el archivo de \"Exportar Excel\"."
+                )
+            found = _locate_columns(row_headers)
             if found is not None:
                 cols = found
                 rows_iter = enumerate(
@@ -102,7 +114,10 @@ def parse_asset_bulk_edit_file(file_bytes: bytes) -> List[Dict[str, Any]]:
         errors: List[str] = []
         asset_tag = norm(_cell(row, cols["assetTag"]))
         if not asset_tag:
-            errors.append("Nº inventario vacío")
+            errors.append(
+                "Nº inventario vacío: \"Editar en lote\" solo modifica activos existentes; "
+                "los nuevos se dan de alta en \"Importar masivo\""
+            )
 
         rows_out.append({
             "rowIndex": row_number,

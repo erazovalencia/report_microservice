@@ -20,6 +20,7 @@ class VacationExportRow(BaseModel):
     motivo: str = ""
     motivoRechazo: str = ""
     observaciones: str = ""
+    formatoUrl: str = ""              # URL autenticada de VALERA al formato TH-F-011 adjunto ("" si no tiene)
 
 
 class VacationExportRequest(BaseModel):
