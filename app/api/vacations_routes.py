@@ -3,11 +3,13 @@ from fastapi.responses import StreamingResponse, JSONResponse
 
 from ..models.VacationsModel import VacationExportRequest
 from ..services.VACATIONS.xlsx.report_export import VacationReportExportService
-from ..services.VACATIONS.parse.balance_import_parser import parse_balance_import_file
+from ..services.BALANCES.parse.balance_import_parser import parse_balance_import_file
 
 router = APIRouter()
 
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+VACATION_BALANCE_HEADERS = {"saldo", "cantidad", "vacaciones", "dias", "días"}
 
 
 @router.post("/report/export")
@@ -36,7 +38,7 @@ async def parse_vacation_balance_import(file: UploadFile = File(...)):
 
     try:
         content = await file.read()
-        rows = parse_balance_import_file(content)
+        rows = parse_balance_import_file(content, VACATION_BALANCE_HEADERS)
         return JSONResponse(content={"rows": rows, "total": len(rows)})
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))

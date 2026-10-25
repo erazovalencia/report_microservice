@@ -12,6 +12,7 @@ from .api.routes import router as export_router
 from .api.hv_routes import router as hv_router
 from .api.rdp_routes import router as rdp_router
 from .api.vacations_routes import router as vacations_router
+from .api.compensatory_routes import router as compensatory_router
 from .api.attendance_routes import router as attendance_router
 from .api.employee_routes import router as employee_router
 from .api.advances_routes import router as advances_router
@@ -48,6 +49,7 @@ app.include_router(export_router, prefix="/api/v1", tags=["export"])
 app.include_router(hv_router, prefix="/hv", tags=["hv"])
 app.include_router(rdp_router, prefix="/rdp", tags=["rdp"])
 app.include_router(vacations_router, prefix="/vacations", tags=["vacations"])
+app.include_router(compensatory_router, prefix="/compensatory", tags=["compensatory"])
 app.include_router(attendance_router, prefix="/attendance", tags=["attendance"])
 app.include_router(employee_router, prefix="/employees", tags=["employees"])
 app.include_router(advances_router, prefix="/advances", tags=["advances"])
