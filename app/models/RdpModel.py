@@ -36,6 +36,8 @@ class RdpExportRequest(BaseModel):
     rows: List[RdpExportRow]
     period_from: str = Field(default="", alias="from")
     period_to: str = Field(default="", alias="to")
+    # En false el archivo no trae las columnas de marcación biométrica ni su leyenda.
+    includeBiotime: bool = True
 
     class Config:
         allow_population_by_field_name = True

@@ -31,7 +31,7 @@ async def export_rdp_report(payload: RdpExportRequest):
 
     try:
         service = RdpReportExportService()
-        buffer = service.generate_file(payload.rows)
+        buffer = service.generate_file(payload.rows, {"include_biotime": payload.includeBiotime})
         fname  = f"reporte_rdp_{payload.period_from}_{payload.period_to}.xlsx"
         return StreamingResponse(
             buffer,

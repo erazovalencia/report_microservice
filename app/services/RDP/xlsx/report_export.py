@@ -48,7 +48,6 @@ BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 DATA_FONT    = Font(size=9)
 ALIGN_CENTER = Alignment(vertical="center", horizontal="center")
 ALIGN_LEFT   = Alignment(vertical="center", horizontal="left")
-CENTERED_COLS = {1, 3, 5, 6, 10, 11, 12, 13, 14, 15}
 
 _ROW_BG_TIPO = {
     "TURNO":      (COLORS["turno_bg"],      "EAF4EA"),
@@ -95,6 +94,18 @@ HEADERS = [
     ("Notas Ausencia",         25),
 ]
 
+# Por rótulo y no por posición: sin las columnas biométricas el resto se corre.
+CENTERED_HEADERS = {
+    "Fecha", "Cédula", "Tipo", "Turno / Ausencia", "H. Entrada", "H. Salida",
+    "Total Horas", "Rotación", "Entrada BioStar", "Salida BioStar",
+}
+BIOTIME_HEADERS = {"Entrada BioStar", "Salida BioStar"}
+
+
+def _visible_columns(include_biotime: bool) -> List[int]:
+    """Índices de HEADERS que lleva el archivo."""
+    return [i for i, (label, _) in enumerate(HEADERS) if include_biotime or label not in BIOTIME_HEADERS]
+
 
 def _fmt_biostar(iso: str) -> str:
     if not iso:
@@ -114,22 +125,25 @@ def _row_fill(tipo: str, row_index: int) -> PatternFill:
 class RdpReportExportService(BaseExportService):
 
     def generate_file(self, data: List[RdpExportRow], options=None) -> io.BytesIO:
+        include_biotime = (options or {}).get("include_biotime", True)
         wb = Workbook()
-        self._build_report_sheet(wb, data)
-        self._build_legend_sheet(wb)
+        self._build_report_sheet(wb, data, _visible_columns(include_biotime))
+        self._build_legend_sheet(wb, include_biotime)
 
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
         return buf
 
-    def _build_report_sheet(self, wb: Workbook, rows: List[RdpExportRow]):
+    def _build_report_sheet(self, wb: Workbook, rows: List[RdpExportRow], columns: List[int]):
         ws = wb.active
         ws.title = "Reporte RDP"
         ws.freeze_panes = "A3"
+        headers = [HEADERS[i] for i in columns]
+        centered = {pos for pos, (label, _) in enumerate(headers, start=1) if label in CENTERED_HEADERS}
 
         # Title row
-        ws.merge_cells(f"A1:{get_column_letter(len(HEADERS))}1")
+        ws.merge_cells(f"A1:{get_column_letter(len(headers))}1")
         title_cell = ws["A1"]
         title_cell.value = "REPORTE RDP — Erazo Valencia"
         title_cell.font = Font(bold=True, size=13, color=COLORS["header_fg"])
@@ -138,7 +152,7 @@ class RdpReportExportService(BaseExportService):
         ws.row_dimensions[1].height = 22
 
         # Header row
-        for col, (label, width) in enumerate(HEADERS, start=1):
+        for col, (label, width) in enumerate(headers, start=1):
             cell = ws.cell(row=2, column=col, value=label)
             cell.font = Font(bold=True, size=10, color=COLORS["header_fg"])
             cell.fill = PatternFill(start_color=COLORS["header_bg"], fill_type="solid")
@@ -152,7 +166,7 @@ class RdpReportExportService(BaseExportService):
             r = i + 3
             fill = _row_fill(row.tipo, i)
 
-            values = [
+            all_values = [
                 row.fecha,
                 row.unidadOrganizativa,
                 row.identificacion,
@@ -182,20 +196,19 @@ class RdpReportExportService(BaseExportService):
                 row.notasAusencia or "",
             ]
 
-            for col, val in enumerate(values, start=1):
-                cell = ws.cell(row=r, column=col, value=val)
+            for col, i in enumerate(columns, start=1):
+                cell = ws.cell(row=r, column=col, value=all_values[i])
                 cell.fill = fill
                 cell.border = BORDER
-                # cols centradas: Fecha(1), Cédula(3), Tipo(5), Turno/Aus(6), H.Entrada(10), H.Salida(11), TotalHoras(12), Rotación(13), BioStar(14,15)
-                cell.alignment = ALIGN_CENTER if col in CENTERED_COLS else ALIGN_LEFT
+                cell.alignment = ALIGN_CENTER if col in centered else ALIGN_LEFT
                 cell.font = DATA_FONT
 
             ws.row_dimensions[r].height = 16
 
         # Auto-filter on header row
-        ws.auto_filter.ref = f"A2:{get_column_letter(len(HEADERS))}{len(rows) + 2}"
+        ws.auto_filter.ref = f"A2:{get_column_letter(len(headers))}{len(rows) + 2}"
 
-    def _build_legend_sheet(self, wb: Workbook):
+    def _build_legend_sheet(self, wb: Workbook, include_biotime: bool):
         ws = wb.create_sheet("Leyenda")
 
         legend = [
@@ -223,8 +236,9 @@ class RdpReportExportService(BaseExportService):
         ws["B6"] = "-0.0417 por día de ausencia en tipos 300/500/601/602"
         ws["A7"] = "Impacto Compensatorios"
         ws["B7"] = "Fracción acumulada según rotación (3x1=0.33, 2x1=0.50, 1x1=1.00, 5x2=0.40, 6x1=0.16)"
-        ws["A8"] = "Entrada/Salida BioStar"
-        ws["B8"] = "Primer y último acceso registrado en BioStar ese día (puede estar vacío si no hay datos)"
+        if include_biotime:
+            ws["A8"] = "Entrada/Salida BioStar"
+            ws["B8"] = "Primer y último acceso registrado en BioStar ese día (puede estar vacío si no hay datos)"
 
         ws.column_dimensions["A"].width = 22
         ws.column_dimensions["B"].width = 20
