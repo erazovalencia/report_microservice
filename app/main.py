@@ -17,6 +17,7 @@ from .api.attendance_routes import router as attendance_router
 from .api.employee_routes import router as employee_router
 from .api.advances_routes import router as advances_router
 from .api.assets_routes import router as assets_router
+from .api.treasury_routes import router as treasury_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -54,6 +55,7 @@ app.include_router(attendance_router, prefix="/attendance", tags=["attendance"])
 app.include_router(employee_router, prefix="/employees", tags=["employees"])
 app.include_router(advances_router, prefix="/advances", tags=["advances"])
 app.include_router(assets_router, prefix="/assets", tags=["assets"])
+app.include_router(treasury_router, prefix="/treasury", tags=["treasury"])
 
 
 @app.get("/")
